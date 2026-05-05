@@ -7,9 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
-<!-- Microsoft Authentication Library -->
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -522,23 +519,9 @@ const CONFIG = {
   completionsListName:'HR_Completions'
 };
 
-// ══════════════════════════════════════════════
-//  MSAL setup
-// ══════════════════════════════════════════════
-const msalConfig = {
-  auth: {
-    clientId: CONFIG.clientId,
-    authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`,
-    redirectUri: window.location.href.split('?')[0].split('#')[0]
-  },
-  cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
-};
-
-const msalInstance = new msal.PublicClientApplication(msalConfig);
-let msalReady = false; // gate to prevent signIn() before initialize() completes
-
 const SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
 
+let msalReady         = false;
 let currentUser       = null;
 let accessToken       = null;
 let spSiteId          = null;
@@ -576,8 +559,8 @@ async function signIn() {
   }
   try {
     document.getElementById('signin-error').style.display = 'none';
-    const result = await msalInstance.loginPopup({ scopes: SCOPES });
-    msalInstance.setActiveAccount(result.account);
+    const result = await window._msalInstance.loginPopup({ scopes: SCOPES });
+    window._msalInstance.setActiveAccount(result.account);
     await bootstrap();
   } catch(e) {
     const box = document.getElementById('signin-error');
@@ -587,13 +570,13 @@ async function signIn() {
 }
 
 function signOut() {
-  msalInstance.logoutPopup();
+  window._msalInstance.logoutPopup();
 }
 
 async function getToken() {
-  const account = msalInstance.getActiveAccount() || msalInstance.getAllAccounts()[0];
+  const account = window._msalInstance.getActiveAccount() || window._msalInstance.getAllAccounts()[0];
   if (!account) throw new Error('No signed-in account');
-  const result = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account });
+  const result = await window._msalInstance.acquireTokenSilent({ scopes: SCOPES, account });
   return result.accessToken;
 }
 
@@ -715,7 +698,7 @@ async function fetchCompletions() {
 async function bootstrap() {
   try {
     setLoading('Connecting to Microsoft 365…');
-    const account = msalInstance.getActiveAccount() || msalInstance.getAllAccounts()[0];
+    const account = window._msalInstance.getActiveAccount() || window._msalInstance.getAllAccounts()[0];
     if (!account) { showScreen('signin-screen'); return; }
 
     currentUser = {
@@ -1017,19 +1000,51 @@ function switchTab(tab, e) {
 }
 
 // ══════════════════════════════════════════════
-//  Init — must call initialize() before anything else
+//  Init — dynamically load MSAL then initialise
 // ══════════════════════════════════════════════
+function loadMSAL() {
+  return new Promise((resolve, reject) => {
+    // If already loaded, resolve immediately
+    if (typeof msal !== 'undefined') { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+    script.onload  = () => resolve();
+    script.onerror = () => {
+      // Fallback to unpkg CDN if Microsoft CDN fails
+      const fallback = document.createElement('script');
+      fallback.src = 'https://unpkg.com/@azure/msal-browser@2.38.3/dist/msal-browser.min.js';
+      fallback.onload  = () => resolve();
+      fallback.onerror = () => reject(new Error('Failed to load MSAL from both CDNs'));
+      document.head.appendChild(fallback);
+    };
+    document.head.appendChild(script);
+  });
+}
+
 (async () => {
   try {
-    // initialize() is required in MSAL v2.38+ before any other calls
-    await msalInstance.initialize();
+    setLoading('Loading authentication library…');
+    await loadMSAL();
+
+    // Now safe to create the instance
+    const _msalConfig = {
+      auth: {
+        clientId:    CONFIG.clientId,
+        authority:   `https://login.microsoftonline.com/${CONFIG.tenantId}`,
+        redirectUri: window.location.href.split('?')[0].split('#')[0]
+      },
+      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+    };
+
+    window._msalInstance = new msal.PublicClientApplication(_msalConfig);
+    await window._msalInstance.initialize();
     msalReady = true;
 
     // Handle redirect response if returning from AAD login
-    await msalInstance.handleRedirectPromise();
-    const accounts = msalInstance.getAllAccounts();
+    await window._msalInstance.handleRedirectPromise();
+    const accounts = window._msalInstance.getAllAccounts();
     if (accounts.length > 0) {
-      msalInstance.setActiveAccount(accounts[0]);
+      window._msalInstance.setActiveAccount(accounts[0]);
       await bootstrap();
     } else {
       showScreen('signin-screen');
