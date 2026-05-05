@@ -559,9 +559,8 @@ async function signIn() {
   }
   try {
     document.getElementById('signin-error').style.display = 'none';
-    const result = await window._msalInstance.loginPopup({ scopes: SCOPES });
-    window._msalInstance.setActiveAccount(result.account);
-    await bootstrap();
+    // Use redirect instead of popup — more reliable, avoids popup blockers
+    await window._msalInstance.loginRedirect({ scopes: SCOPES });
   } catch(e) {
     const box = document.getElementById('signin-error');
     box.textContent = 'Sign-in failed: ' + (e.message || e);
@@ -570,7 +569,7 @@ async function signIn() {
 }
 
 function signOut() {
-  window._msalInstance.logoutPopup();
+  window._msalInstance.logoutRedirect();
 }
 
 async function getToken() {
@@ -1023,6 +1022,7 @@ function loadMSAL() {
 
 (async () => {
   try {
+    // Show loading while MSAL loads — don't show sign-in screen yet
     setLoading('Loading authentication library…');
     await loadMSAL();
 
@@ -1040,13 +1040,25 @@ function loadMSAL() {
     await window._msalInstance.initialize();
     msalReady = true;
 
-    // Handle redirect response if returning from AAD login
-    await window._msalInstance.handleRedirectPromise();
+    // IMPORTANT: handleRedirectPromise catches the response when Microsoft
+    // redirects back to this page after a successful login
+    setLoading('Checking authentication…');
+    const redirectResult = await window._msalInstance.handleRedirectPromise();
+
+    if (redirectResult && redirectResult.account) {
+      // User just came back from Microsoft login redirect
+      window._msalInstance.setActiveAccount(redirectResult.account);
+      await bootstrap();
+      return;
+    }
+
+    // Check if already signed in from a previous session
     const accounts = window._msalInstance.getAllAccounts();
     if (accounts.length > 0) {
       window._msalInstance.setActiveAccount(accounts[0]);
       await bootstrap();
     } else {
+      // Not signed in — show the sign-in screen
       showScreen('signin-screen');
     }
   } catch(e) {
