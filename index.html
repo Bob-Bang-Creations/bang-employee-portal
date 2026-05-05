@@ -535,15 +535,16 @@ const msalConfig = {
 };
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
+let msalReady = false; // gate to prevent signIn() before initialize() completes
 
 const SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
 
-let currentUser    = null;
-let accessToken    = null;
-let spSiteId       = null;
-let tasksListId    = null;
+let currentUser       = null;
+let accessToken       = null;
+let spSiteId          = null;
+let tasksListId       = null;
 let completionsListId = null;
-let cachedTasks    = [];
+let cachedTasks       = [];
 let cachedCompletions = [];
 
 // ══════════════════════════════════════════════
@@ -567,6 +568,12 @@ function showError(msg)  { document.getElementById('error-msg').textContent = ms
 //  Auth
 // ══════════════════════════════════════════════
 async function signIn() {
+  if (!msalReady) {
+    const box = document.getElementById('signin-error');
+    box.textContent = 'Still initialising — please wait a moment and try again.';
+    box.style.display = 'block';
+    return;
+  }
   try {
     document.getElementById('signin-error').style.display = 'none';
     const result = await msalInstance.loginPopup({ scopes: SCOPES });
@@ -1010,10 +1017,14 @@ function switchTab(tab, e) {
 }
 
 // ══════════════════════════════════════════════
-//  Init — handle redirect after login
+//  Init — must call initialize() before anything else
 // ══════════════════════════════════════════════
 (async () => {
   try {
+    // initialize() is required in MSAL v2.38+ before any other calls
+    await msalInstance.initialize();
+    msalReady = true;
+
     // Handle redirect response if returning from AAD login
     await msalInstance.handleRedirectPromise();
     const accounts = msalInstance.getAllAccounts();
