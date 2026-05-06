@@ -1,473 +1,201 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bang Creations — HR Training Portal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<title>Bang Creations HR Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --orange:      #FAA61A;
-    --orange-dk:   #d4880f;
-    --orange-lt:   #FEF0D3;
-    --white:       #ffffff;
-    --off-white:   #f7f7f5;
-    --grey-50:     #f2f2f0;
-    --grey-100:    #e6e6e2;
-    --grey-200:    #d0d0ca;
-    --grey-400:    #9b9b94;
-    --grey-600:    #5e5e58;
-    --grey-900:    #1a1a18;
-    --green-bg:    #edfaf3;
-    --green-text:  #1a7a45;
-    --red-bg:      #fdecea;
-    --red-text:    #c0392b;
-    --blue-bg:     #eaf2ff;
-    --blue-text:   #1a5fb4;
-    --radius-sm:   6px;
-    --radius-md:   10px;
-    --radius-lg:   14px;
-    --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:   0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-    --font:        'DM Sans', 'Helvetica Neue', Arial, sans-serif;
-  }
-
-  html, body {
-    font-family: var(--font);
-    font-size: 14px;
-    background: var(--off-white);
-    color: var(--grey-900);
-    line-height: 1.5;
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ── Auth / Loading screens ── */
-  .screen {
-    display: none;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 18px;
-    background: var(--off-white);
-    text-align: center;
-    padding: 24px;
-  }
-  .screen.active { display: flex; }
-
-  .screen-logo {
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.8px;
-    color: var(--grey-900);
-  }
-  .screen-logo .dot { color: var(--orange); }
-  .screen-sub { font-size: 14px; color: var(--grey-400); }
-
-  .sign-in-btn {
-    font-family: var(--font);
-    background: var(--orange);
-    color: var(--white);
-    border: none;
-    border-radius: var(--radius-md);
-    padding: 12px 32px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(250,166,26,0.3);
-    transition: background 0.15s, box-shadow 0.15s;
-    margin-top: 8px;
-  }
-  .sign-in-btn:hover { background: var(--orange-dk); box-shadow: 0 4px 14px rgba(250,166,26,0.35); }
-
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--grey-100);
-    border-top-color: var(--orange);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-text { font-size: 13px; color: var(--grey-400); }
-
-  .error-box {
-    background: var(--red-bg);
-    color: var(--red-text);
-    border-radius: var(--radius-md);
-    padding: 14px 20px;
-    font-size: 13px;
-    max-width: 420px;
-    line-height: 1.6;
-  }
-  .retry-btn {
-    font-family: var(--font);
-    background: transparent;
-    border: 1.5px solid var(--orange);
-    color: var(--orange);
-    border-radius: var(--radius-md);
-    padding: 8px 22px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .retry-btn:hover { background: var(--orange); color: var(--white); }
-
-  /* ── Main portal shell ── */
-  #portal-screen { display: none; flex-direction: column; min-height: 100vh; }
-  #portal-screen.active { display: flex; }
-
-  .portal-header {
-    background: var(--white);
-    border-bottom: 2.5px solid var(--orange);
-    padding: 14px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow-sm);
-  }
-  .header-left { display: flex; align-items: baseline; gap: 10px; }
-  .portal-logo { font-size: 21px; font-weight: 600; letter-spacing: -0.6px; color: var(--grey-900); }
-  .portal-logo .dot { color: var(--orange); }
-  .portal-divider { width: 1px; height: 18px; background: var(--grey-200); }
-  .portal-subtitle { font-size: 12px; color: var(--grey-400); }
-  .header-right { display: flex; align-items: center; gap: 14px; }
-  .user-pill {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--grey-50);
-    border-radius: 20px;
-    padding: 5px 12px 5px 6px;
-    font-size: 12px;
-    color: var(--grey-600);
-    font-weight: 500;
-  }
-  .user-avatar {
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    background: var(--orange-lt);
-    color: #7a4f00;
-    font-size: 10px;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .signout-btn {
-    font-family: var(--font);
-    font-size: 11px;
-    font-weight: 500;
-    padding: 5px 12px;
-    border: 1px solid var(--grey-200);
-    background: transparent;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    color: var(--grey-600);
-    transition: all 0.12s;
-  }
-  .signout-btn:hover { border-color: var(--grey-400); color: var(--grey-900); }
-
-  /* ── Tab bar ── */
-  .tab-bar {
-    background: var(--white);
-    border-bottom: 1px solid var(--grey-100);
-    display: flex;
-    padding: 0 24px;
-  }
-  .tab-btn {
-    padding: 13px 20px;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 500;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: var(--grey-400);
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .tab-btn:hover { color: var(--orange); }
-  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); }
-
-  /* ── Content ── */
-  .content-area { flex: 1; }
-  .panel { display: none; padding: 24px; max-width: 960px; margin: 0 auto; width: 100%; }
-  .panel.active { display: block; }
-
-  /* ── Stats ── */
-  .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--white);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--grey-100);
-  }
-  .stat-card .num { font-size: 30px; font-weight: 600; color: var(--orange); line-height: 1; letter-spacing: -1px; }
-  .stat-card .lbl { font-size: 11px; font-weight: 500; color: var(--grey-400); margin-top: 5px; text-transform: uppercase; letter-spacing: 0.06em; }
-
-  .section-title { font-size: 11px; font-weight: 600; color: var(--grey-400); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-
-  /* ── Task cards ── */
-  .task-card {
-    background: var(--white);
-    border: 1px solid var(--grey-100);
-    border-radius: var(--radius-lg);
-    padding: 16px 18px;
-    margin-bottom: 10px;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.15s, border-color 0.15s;
-  }
-  .task-card:hover { box-shadow: var(--shadow-md); border-color: var(--grey-200); }
-  .task-card.completed { opacity: 0.65; }
-  .task-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .task-name { font-size: 15px; font-weight: 500; color: var(--grey-900); line-height: 1.3; }
-  .task-name.done { text-decoration: line-through; color: var(--grey-400); }
-  .task-meta { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 7px; align-items: center; }
-  .task-desc { font-size: 12.5px; color: var(--grey-600); margin-top: 6px; line-height: 1.5; }
-  .task-links { margin-top: 8px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
-  .task-links a { color: var(--orange); text-decoration: none; font-weight: 500; }
-  .task-links a:hover { text-decoration: underline; }
-
-  .badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
-  .badge-orange { background: var(--orange-lt); color: #7a4f00; }
-  .badge-green  { background: var(--green-bg);  color: var(--green-text); }
-  .badge-red    { background: var(--red-bg);    color: var(--red-text); }
-  .badge-gray   { background: var(--grey-50);   color: var(--grey-600); }
-  .badge-blue   { background: var(--blue-bg);   color: var(--blue-text); }
-
-  .complete-btn {
-    font-family: var(--font);
-    font-size: 12px;
-    font-weight: 500;
-    padding: 7px 15px;
-    border: 1.5px solid var(--orange);
-    background: transparent;
-    color: var(--orange);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background 0.15s, color 0.15s;
-  }
-  .complete-btn:hover { background: var(--orange); color: var(--white); }
-  .complete-btn.done { border-color: var(--grey-200); color: var(--grey-400); background: var(--grey-50); }
-  .complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── Filters ── */
-  .filter-row {
-    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-    margin-bottom: 18px; background: var(--white);
-    padding: 12px 16px; border-radius: var(--radius-lg);
-    border: 1px solid var(--grey-100); box-shadow: var(--shadow-sm);
-  }
-  .filter-row label { font-size: 12px; font-weight: 500; color: var(--grey-600); }
-  .filter-row select {
-    font-family: var(--font); font-size: 13px; padding: 6px 10px;
-    border-radius: var(--radius-sm); border: 1px solid var(--grey-200);
-    background: var(--white); color: var(--grey-900); cursor: pointer; outline: none;
-  }
-  .filter-row select:focus { border-color: var(--orange); }
-
-  /* ── Avatars ── */
-  .avatars-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-  .avatar { width: 28px; height: 28px; border-radius: 50%; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
-  .av-pending { background: var(--orange-lt); color: #7a4f00; }
-  .av-done    { background: var(--green-bg);  color: var(--green-text); }
-  .av-overdue { background: var(--red-bg);    color: var(--red-text); }
-
-  /* ── HR Manager form ── */
-  .form-card {
-    background: var(--white); border: 1px solid var(--grey-100);
-    border-radius: var(--radius-lg); padding: 20px 22px;
-    margin-bottom: 22px; box-shadow: var(--shadow-sm);
-  }
-  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-row { margin-bottom: 15px; }
-  .form-row label { font-size: 12px; font-weight: 500; color: var(--grey-600); display: block; margin-bottom: 6px; }
-  .form-row input[type=text],
-  .form-row input[type=date],
-  .form-row textarea,
-  .form-row select {
-    width: 100%; font-family: var(--font); font-size: 13.5px;
-    padding: 9px 11px; border-radius: var(--radius-sm);
-    border: 1px solid var(--grey-200); background: var(--white);
-    color: var(--grey-900); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .form-row input:focus, .form-row textarea:focus, .form-row select:focus {
-    border-color: var(--orange); box-shadow: 0 0 0 3px rgba(250,166,26,0.12);
-  }
-  .form-row textarea { min-height: 74px; resize: vertical; line-height: 1.5; }
-  .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; }
-  .checkbox-group label { font-size: 13px; color: var(--grey-900); display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 400; margin-bottom: 0; }
-  .checkbox-group input[type=checkbox] { accent-color: var(--orange); width: 14px; height: 14px; cursor: pointer; }
-
-  .submit-btn {
-    font-family: var(--font); background: var(--orange); color: var(--white);
-    border: none; border-radius: var(--radius-md); padding: 10px 24px;
-    font-size: 14px; font-weight: 600; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(250,166,26,0.25); transition: background 0.15s;
-  }
-  .submit-btn:hover { background: var(--orange-dk); }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* ── Table ── */
-  .table-card { background: var(--white); border: 1px solid var(--grey-100); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 22px; }
-  .manage-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-  .manage-table th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--grey-400); padding: 11px 14px; background: var(--grey-50); border-bottom: 1px solid var(--grey-100); }
-  .manage-table td { padding: 10px 14px; border-bottom: 1px solid var(--grey-100); color: var(--grey-900); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .manage-table tr:last-child td { border-bottom: none; }
-  .manage-table tr:hover td { background: var(--grey-50); }
-  .del-btn { font-family: var(--font); font-size: 11px; font-weight: 500; padding: 4px 11px; border: 1px solid var(--grey-200); background: transparent; border-radius: var(--radius-sm); cursor: pointer; color: var(--red-text); transition: background 0.12s; }
-  .del-btn:hover { background: var(--red-bg); border-color: var(--red-text); }
-  .del-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* ── Toast ── */
-  .toast { background: var(--grey-900); color: var(--white); font-size: 13px; font-weight: 500; padding: 11px 18px; border-radius: var(--radius-md); margin-bottom: 14px; display: none; align-items: center; gap: 8px; box-shadow: var(--shadow-md); }
-  .toast.show { display: flex; }
-  .toast.error { background: var(--red-text); }
-
-  .empty-msg { text-align: center; padding: 36px; color: var(--grey-400); font-size: 14px; }
-
-  .inline-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
-
-  @media (max-width: 640px) {
-    .summary-cards { grid-template-columns: repeat(2,1fr); }
-    .form-grid-2 { grid-template-columns: 1fr; }
-    .panel { padding: 16px; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --or:#FAA61A;--ord:#d4880f;--olt:#FEF0D3;
+  --w:#fff;--ow:#f7f7f5;--g50:#f2f2f0;--g100:#e6e6e2;--g200:#d0d0ca;--g400:#9b9b94;--g600:#5e5e58;--g900:#1a1a18;
+  --gbg:#edfaf3;--gtx:#1a7a45;--rbg:#fdecea;--rtx:#c0392b;--bbg:#eaf2ff;--btx:#1a5fb4;
+  --rsm:6px;--rmd:10px;--rlg:14px;
+  --ss:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sm:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --f:'DM Sans','Helvetica Neue',Arial,sans-serif
+}
+html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g900);line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased}
+.screen{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:var(--ow);text-align:center;padding:24px}
+.screen.active{display:flex}
+.slogo{font-size:28px;font-weight:600;letter-spacing:-.8px;color:var(--g900)}
+.slogo .dot{color:var(--or)}
+.ssub{font-size:14px;color:var(--g400)}
+.sinbtn{font-family:var(--f);background:var(--or);color:var(--w);border:none;border-radius:var(--rmd);padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 10px rgba(250,166,26,.3);transition:background .15s;margin-top:8px}
+.sinbtn:hover{background:var(--ord)}
+.spinner{width:36px;height:36px;border:3px solid var(--g100);border-top-color:var(--or);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ltxt{font-size:13px;color:var(--g400)}
+.ebox{background:var(--rbg);color:var(--rtx);border-radius:var(--rmd);padding:14px 20px;font-size:13px;max-width:420px;line-height:1.6}
+.rbtn{font-family:var(--f);background:transparent;border:1.5px solid var(--or);color:var(--or);border-radius:var(--rmd);padding:8px 22px;font-size:13px;font-weight:500;cursor:pointer}
+.rbtn:hover{background:var(--or);color:var(--w)}
+#portal{display:none;flex-direction:column;min-height:100vh}
+#portal.active{display:flex}
+.hdr{background:var(--w);border-bottom:2.5px solid var(--or);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--ss)}
+.hleft{display:flex;align-items:baseline;gap:10px}
+.plogo{font-size:21px;font-weight:600;letter-spacing:-.6px;color:var(--g900)}
+.plogo .dot{color:var(--or)}
+.pdiv{width:1px;height:18px;background:var(--g200)}
+.psub{font-size:12px;color:var(--g400)}
+.hright{display:flex;align-items:center;gap:14px}
+.upill{display:flex;align-items:center;gap:8px;background:var(--g50);border-radius:20px;padding:5px 12px 5px 6px;font-size:12px;color:var(--g600);font-weight:500}
+.uav{width:24px;height:24px;border-radius:50%;background:var(--olt);color:#7a4f00;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sobtn{font-family:var(--f);font-size:11px;font-weight:500;padding:5px 12px;border:1px solid var(--g200);background:transparent;border-radius:var(--rsm);cursor:pointer;color:var(--g600)}
+.sobtn:hover{border-color:var(--g400);color:var(--g900)}
+.tabs{background:var(--w);border-bottom:1px solid var(--g100);display:flex;padding:0 24px}
+.tab{padding:13px 20px;font-family:var(--f);font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;color:var(--g400);border-bottom:3px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s}
+.tab:hover{color:var(--or)}
+.tab.active{color:var(--or);border-bottom-color:var(--or)}
+.ca{flex:1}
+.panel{display:none;padding:24px;max-width:960px;margin:0 auto;width:100%}
+.panel.active{display:block}
+.scards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.sc{background:var(--w);border-radius:var(--rlg);padding:16px 18px;text-align:center;box-shadow:var(--ss);border:1px solid var(--g100)}
+.sc .n{font-size:30px;font-weight:600;color:var(--or);line-height:1;letter-spacing:-1px}
+.sc .l{font-size:11px;font-weight:500;color:var(--g400);margin-top:5px;text-transform:uppercase;letter-spacing:.06em}
+.stitle{font-size:11px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.tc{background:var(--w);border:1px solid var(--g100);border-radius:var(--rlg);padding:16px 18px;margin-bottom:10px;box-shadow:var(--ss);transition:box-shadow .15s,border-color .15s}
+.tc:hover{box-shadow:var(--sm);border-color:var(--g200)}
+.tc.done{opacity:.65}
+.ttop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.tn{font-size:15px;font-weight:500;color:var(--g900);line-height:1.3}
+.tn.struck{text-decoration:line-through;color:var(--g400)}
+.tmeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px;align-items:center}
+.tdesc{font-size:12.5px;color:var(--g600);margin-top:6px;line-height:1.5}
+.tlinks{margin-top:8px;font-size:12px;display:flex;flex-wrap:wrap;gap:8px}
+.tlinks a{color:var(--or);text-decoration:none;font-weight:500}
+.tlinks a:hover{text-decoration:underline}
+.badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.bor{background:var(--olt);color:#7a4f00}
+.bgr{background:var(--gbg);color:var(--gtx)}
+.bre{background:var(--rbg);color:var(--rtx)}
+.bgy{background:var(--g50);color:var(--g600)}
+.bbl{background:var(--bbg);color:var(--btx)}
+.cbtn{font-family:var(--f);font-size:12px;font-weight:500;padding:7px 15px;border:1.5px solid var(--or);background:transparent;color:var(--or);border-radius:var(--rmd);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s,color .15s}
+.cbtn:hover{background:var(--or);color:var(--w)}
+.cbtn.dn{border-color:var(--g200);color:var(--g400);background:var(--g50)}
+.cbtn:disabled{opacity:.5;cursor:not-allowed}
+.frow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;background:var(--w);padding:12px 16px;border-radius:var(--rlg);border:1px solid var(--g100);box-shadow:var(--ss)}
+.frow label{font-size:12px;font-weight:500;color:var(--g600)}
+.frow select{font-family:var(--f);font-size:13px;padding:6px 10px;border-radius:var(--rsm);border:1px solid var(--g200);background:var(--w);color:var(--g900);cursor:pointer;outline:none}
+.frow select:focus{border-color:var(--or)}
+.avrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.av{width:28px;height:28px;border-radius:50%;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+.avp{background:var(--olt);color:#7a4f00}
+.avd{background:var(--gbg);color:var(--gtx)}
+.avo{background:var(--rbg);color:var(--rtx)}
+.fcard{background:var(--w);border:1px solid var(--g100);border-radius:var(--rlg);padding:20px 22px;margin-bottom:22px;box-shadow:var(--ss)}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fr{margin-bottom:15px}
+.fr label{font-size:12px;font-weight:500;color:var(--g600);display:block;margin-bottom:6px}
+.fr input[type=text],.fr input[type=date],.fr textarea,.fr select{width:100%;font-family:var(--f);font-size:13.5px;padding:9px 11px;border-radius:var(--rsm);border:1px solid var(--g200);background:var(--w);color:var(--g900);outline:none;transition:border-color .15s,box-shadow .15s}
+.fr input:focus,.fr textarea:focus,.fr select:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(250,166,26,.12)}
+.fr textarea{min-height:74px;resize:vertical;line-height:1.5}
+.cbxg{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px}
+.cbxg label{font-size:13px;color:var(--g900);display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:400;margin-bottom:0}
+.cbxg input[type=checkbox]{accent-color:var(--or);width:14px;height:14px;cursor:pointer}
+.sbtn{font-family:var(--f);background:var(--or);color:var(--w);border:none;border-radius:var(--rmd);padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(250,166,26,.25);transition:background .15s}
+.sbtn:hover{background:var(--ord)}
+.sbtn:disabled{opacity:.5;cursor:not-allowed}
+.tblcard{background:var(--w);border:1px solid var(--g100);border-radius:var(--rlg);overflow:hidden;box-shadow:var(--ss);margin-bottom:22px}
+.mtbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.mtbl th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--g400);padding:11px 14px;background:var(--g50);border-bottom:1px solid var(--g100)}
+.mtbl td{padding:10px 14px;border-bottom:1px solid var(--g100);color:var(--g900);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtbl tr:last-child td{border-bottom:none}
+.mtbl tr:hover td{background:var(--g50)}
+.dbtn{font-family:var(--f);font-size:11px;font-weight:500;padding:4px 11px;border:1px solid var(--g200);background:transparent;border-radius:var(--rsm);cursor:pointer;color:var(--rtx)}
+.dbtn:hover{background:var(--rbg);border-color:var(--rtx)}
+.dbtn:disabled{opacity:.4;cursor:not-allowed}
+.toast{background:var(--g900);color:var(--w);font-size:13px;font-weight:500;padding:11px 18px;border-radius:var(--rmd);margin-bottom:14px;display:none;align-items:center;gap:8px;box-shadow:var(--sm)}
+.toast.show{display:flex}
+.toast.err{background:var(--rtx)}
+.empty{text-align:center;padding:36px;color:var(--g400);font-size:14px}
+.isp{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@media(max-width:640px){.scards{grid-template-columns:repeat(2,1fr)}.fg2{grid-template-columns:1fr}.panel{padding:16px}}
 </style>
 </head>
 <body>
 
-<!-- Sign-in screen -->
-<div class="screen active" id="signin-screen">
-  <div class="screen-logo">Bang<span class="dot">.</span> HR Portal</div>
-  <div class="screen-sub">Training &amp; Development — Sign in with your Microsoft 365 account</div>
-  <button class="sign-in-btn" onclick="signIn()">Sign in with Microsoft</button>
-  <div id="signin-error" class="error-box" style="display:none"></div>
-</div>
-
-<!-- Loading screen -->
-<div class="screen" id="loading-screen">
+<div class="screen active" id="s-loading">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Signing you in…</div>
+  <div class="ltxt" id="ltxt">Loading…</div>
 </div>
 
-<!-- Error screen -->
-<div class="screen" id="error-screen">
-  <div class="screen-logo">Bang<span class="dot">.</span></div>
-  <div class="error-box" id="error-msg">Something went wrong.</div>
-  <button class="retry-btn" onclick="location.reload()">Try again</button>
+<div class="screen" id="s-signin">
+  <div class="slogo">Bang<span class="dot">.</span> HR Portal</div>
+  <div class="ssub">Sign in with your Microsoft 365 account</div>
+  <button class="sinbtn" id="sinbtn">Sign in with Microsoft</button>
+  <div id="sin-err" class="ebox" style="display:none"></div>
 </div>
 
-<!-- Main portal -->
-<div id="portal-screen">
-  <header class="portal-header">
-    <div class="header-left">
-      <div class="portal-logo">Bang<span class="dot">.</span></div>
-      <div class="portal-divider"></div>
-      <div class="portal-subtitle">HR Training Portal</div>
+<div class="screen" id="s-error">
+  <div class="slogo">Bang<span class="dot">.</span></div>
+  <div class="ebox" id="errmsg">Something went wrong.</div>
+  <button class="rbtn" onclick="location.reload()">Try again</button>
+</div>
+
+<div id="portal">
+  <header class="hdr">
+    <div class="hleft">
+      <div class="plogo">Bang<span class="dot">.</span></div>
+      <div class="pdiv"></div>
+      <div class="psub">HR Training Portal</div>
     </div>
-    <div class="header-right">
-      <div class="user-pill">
-        <div class="user-avatar" id="user-avatar"></div>
-        <span id="user-name"></span>
-      </div>
-      <button class="signout-btn" onclick="signOut()">Sign out</button>
+    <div class="hright">
+      <div class="upill"><div class="uav" id="uav"></div><span id="uname"></span></div>
+      <button class="sobtn" id="sobtn">Sign out</button>
     </div>
   </header>
-
-  <nav class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('my-tasks',event)">My tasks</button>
-    <button class="tab-btn" onclick="switchTab('all-tasks',event)">All tasks</button>
-    <button class="tab-btn" onclick="switchTab('hr-manager',event)">HR manager</button>
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab('my',event)">My tasks</button>
+    <button class="tab" onclick="switchTab('all',event)">All tasks</button>
+    <button class="tab" onclick="switchTab('hr',event)">HR manager</button>
   </nav>
-
-  <div class="content-area">
-
-    <!-- MY TASKS -->
-    <div class="panel active" id="panel-my-tasks">
-      <div class="summary-cards" id="my-stats"></div>
-      <div class="section-title">Assigned to me</div>
-      <div id="my-task-list"></div>
+  <div class="ca">
+    <div class="panel active" id="panel-my">
+      <div class="scards" id="my-stats"></div>
+      <div class="stitle">Assigned to me</div>
+      <div id="my-list"></div>
     </div>
-
-    <!-- ALL TASKS -->
-    <div class="panel" id="panel-all-tasks">
-      <div class="filter-row">
+    <div class="panel" id="panel-all">
+      <div class="frow">
         <label>Filter by person:</label>
-        <select id="filter-person" onchange="renderAllTasks()">
+        <select id="fp" onchange="renderAll()">
           <option value="">Everyone</option>
-          <option value="Sarah Cheetham">Sarah Cheetham</option>
-          <option value="Jack Sandys">Jack Sandys</option>
-          <option value="Bob Holt">Bob Holt</option>
-          <option value="Stefan Knox">Stefan Knox</option>
-          <option value="Kirstin Knox">Kirstin Knox</option>
-          <option value="Rachel Jones">Rachel Jones</option>
+          <option>Sarah Cheetham</option><option>Jack Sandys</option><option>Bob Holt</option>
+          <option>Stefan Knox</option><option>Kirstin Knox</option><option>Rachel Jones</option>
         </select>
-        <label style="margin-left:6px;">Status:</label>
-        <select id="filter-status" onchange="renderAllTasks()">
+        <label style="margin-left:6px">Status:</label>
+        <select id="fs" onchange="renderAll()">
           <option value="">All</option>
           <option value="pending">Pending</option>
           <option value="complete">Complete</option>
           <option value="overdue">Overdue</option>
         </select>
       </div>
-      <div class="summary-cards" id="all-stats"></div>
-      <div class="section-title">Task overview</div>
-      <div id="all-task-list"></div>
+      <div class="scards" id="all-stats"></div>
+      <div class="stitle">Task overview</div>
+      <div id="all-list"></div>
     </div>
-
-    <!-- HR MANAGER -->
-    <div class="panel" id="panel-hr-manager">
-      <div id="toast-msg" class="toast"><span id="toast-text"></span></div>
-
-      <div class="section-title">Assign new training task</div>
-      <div class="form-card">
-        <div class="form-row">
-          <label>Task title</label>
-          <input type="text" id="f-title" placeholder="e.g. Fire Safety Awareness">
-        </div>
-        <div class="form-row">
-          <label>Description</label>
-          <textarea id="f-desc" placeholder="Brief description of the task or training objective…"></textarea>
-        </div>
-        <div class="form-grid-2">
-          <div class="form-row">
-            <label>Due date</label>
-            <input type="date" id="f-due">
-          </div>
-          <div class="form-row">
-            <label>Category</label>
+    <div class="panel" id="panel-hr">
+      <div id="toast" class="toast"><span id="toasttxt"></span></div>
+      <div class="stitle">Assign new training task</div>
+      <div class="fcard">
+        <div class="fr"><label>Task title</label><input type="text" id="f-title" placeholder="e.g. Fire Safety Awareness"></div>
+        <div class="fr"><label>Description</label><textarea id="f-desc" placeholder="Brief description…"></textarea></div>
+        <div class="fg2">
+          <div class="fr"><label>Due date</label><input type="date" id="f-due"></div>
+          <div class="fr"><label>Category</label>
             <select id="f-cat">
-              <option>Health &amp; Safety</option>
-              <option>Compliance</option>
-              <option>Professional Development</option>
-              <option>Onboarding</option>
-              <option>Technical Skills</option>
-              <option>Leadership</option>
-              <option>Other</option>
+              <option>Health &amp; Safety</option><option>Compliance</option>
+              <option>Professional Development</option><option>Onboarding</option>
+              <option>Technical Skills</option><option>Leadership</option><option>Other</option>
             </select>
           </div>
         </div>
-        <div class="form-row">
-          <label>Assign to</label>
-          <div class="checkbox-group">
+        <div class="fr"><label>Assign to</label>
+          <div class="cbxg">
             <label><input type="checkbox" value="Sarah Cheetham"> Sarah Cheetham</label>
             <label><input type="checkbox" value="Jack Sandys"> Jack Sandys</label>
             <label><input type="checkbox" value="Bob Holt"> Bob Holt</label>
@@ -476,580 +204,343 @@
             <label><input type="checkbox" value="Rachel Jones"> Rachel Jones</label>
           </div>
         </div>
-        <div class="form-row">
-          <label>Related links / resources <span style="font-weight:400;color:var(--grey-400)">(comma-separated URLs)</span></label>
-          <input type="text" id="f-links" placeholder="https://… , https://…">
-        </div>
-        <div style="margin-top:4px">
-          <button class="submit-btn" id="submit-btn" onclick="addTask()">Assign task</button>
-        </div>
+        <div class="fr"><label>Related links <span style="font-weight:400;color:var(--g400)">(comma-separated)</span></label><input type="text" id="f-links" placeholder="https://…"></div>
+        <button class="sbtn" id="addbtn" onclick="addTask()">Assign task</button>
       </div>
-
-      <div class="section-title">All tasks — manage</div>
-      <div class="table-card">
-        <table class="manage-table">
-          <thead>
-            <tr>
-              <th style="width:28%">Task</th>
-              <th style="width:20%">Assigned to</th>
-              <th style="width:12%">Due</th>
-              <th style="width:16%">Category</th>
-              <th style="width:13%">Progress</th>
-              <th style="width:11%">Action</th>
-            </tr>
-          </thead>
-          <tbody id="manage-tbody"></tbody>
+      <div class="stitle">All tasks — manage</div>
+      <div class="tblcard">
+        <table class="mtbl">
+          <thead><tr>
+            <th style="width:28%">Task</th><th style="width:20%">Assigned to</th>
+            <th style="width:12%">Due</th><th style="width:16%">Category</th>
+            <th style="width:13%">Progress</th><th style="width:11%">Action</th>
+          </tr></thead>
+          <tbody id="mtbody"></tbody>
         </table>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-//  All variables declared first — no hoisting issues
-// ══════════════════════════════════════════════
-var CONFIG = {
-  clientId:           'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
-  tenantId:           'a3f79504-fd00-417d-9194-0559070d1f8e',
-  siteUrl:            'https://bangcreations.sharepoint.com/sites/BANGTEAM',
-  tenant:             'bangcreations',
-  tasksListName:      'HR_Tasks',
-  completionsListName:'HR_Completions'
+// All globals declared with var at the very top to avoid any TDZ issues
+var CFG = {
+  clientId:   'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
+  tenantId:   'a3f79504-fd00-417d-9194-0559070d1f8e',
+  siteUrl:    'https://bangcreations.sharepoint.com/sites/BANGTEAM',
+  tenant:     'bangcreations',
+  listTasks:  'HR_Tasks',
+  listComps:  'HR_Completions'
 };
+var SCOPES  = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
+var gMsal   = null;
+var gUser   = null;
+var gSiteId = null;
+var gTLId   = null;
+var gCLId   = null;
+var gTasks  = [];
+var gComps  = [];
 
-var SCOPES             = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
-var msalReady          = false;
-var currentUser        = null;
-var spSiteId           = null;
-var tasksListId        = null;
-var completionsListId  = null;
-var cachedTasks        = [];
-var cachedCompletions  = [];
-
-// ══════════════════════════════════════════════
-//  Screens
-// ══════════════════════════════════════════════
+// Screen management
 function showScreen(id) {
-  ['signin-screen','loading-screen','error-screen','portal-screen'].forEach(s => {
-    const el = document.getElementById(s);
+  var ids = ['s-loading','s-signin','s-error','portal'];
+  for (var i=0; i<ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (!el) continue;
     el.classList.remove('active');
-    if (s === 'portal-screen') el.style.display = 'none';
-  });
-  const target = document.getElementById(id);
-  if (id === 'portal-screen') { target.style.display = 'flex'; target.classList.add('active'); }
-  else target.classList.add('active');
-}
-
-function setLoading(msg) { document.getElementById('loading-text').textContent = msg; showScreen('loading-screen'); }
-function showError(msg)  { document.getElementById('error-msg').textContent = msg; showScreen('error-screen'); }
-
-// ══════════════════════════════════════════════
-//  Auth
-// ══════════════════════════════════════════════
-function signIn() {
-  if (!msalReady || !window._msalInstance) {
-    var box = document.getElementById('signin-error');
-    box.textContent = 'Still loading — please wait a moment and try again.';
-    box.style.display = 'block';
-    return;
+    if (ids[i]==='portal') el.style.display='none';
   }
-  document.getElementById('signin-error').style.display = 'none';
-  window._msalInstance.loginRedirect({ scopes: SCOPES }).catch(function(e) {
-    var box = document.getElementById('signin-error');
-    box.textContent = 'Sign-in failed: ' + (e.message || String(e));
-    box.style.display = 'block';
+  var t = document.getElementById(id);
+  if (!t) return;
+  if (id==='portal') { t.style.display='flex'; t.classList.add('active'); }
+  else t.classList.add('active');
+}
+function setLoading(msg) { document.getElementById('ltxt').textContent=msg; showScreen('s-loading'); }
+function showFatalError(msg) { document.getElementById('errmsg').textContent=msg; showScreen('s-error'); }
+
+// Sign in / out — these are wired up AFTER gMsal is set
+function doSignIn() {
+  document.getElementById('sin-err').style.display='none';
+  gMsal.loginRedirect({ scopes: SCOPES }).catch(function(e) {
+    var el=document.getElementById('sin-err');
+    el.textContent='Sign-in failed: '+(e.message||String(e));
+    el.style.display='block';
   });
 }
+function doSignOut() { gMsal.logoutRedirect(); }
 
-function signOut() {
-  if (window._msalInstance) window._msalInstance.logoutRedirect();
+// Token
+function getToken() {
+  var acct = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
+  if (!acct) return Promise.reject(new Error('Not signed in'));
+  return gMsal.acquireTokenSilent({ scopes:SCOPES, account:acct }).then(function(r){ return r.accessToken; });
 }
 
-async function getToken() {
-  const account = window._msalInstance.getActiveAccount() || window._msalInstance.getAllAccounts()[0];
-  if (!account) throw new Error('No signed-in account');
-  const result = await window._msalInstance.acquireTokenSilent({ scopes: SCOPES, account });
-  return result.accessToken;
-}
-
-// ══════════════════════════════════════════════
-//  Graph API helpers
-// ══════════════════════════════════════════════
-async function graphGet(url) {
-  const token = await getToken();
-  const res = await fetch('https://graph.microsoft.com/v1.0' + url, {
-    headers: { Authorization: 'Bearer ' + token, Accept: 'application/json' }
-  });
-  if (!res.ok) throw new Error(`Graph GET ${url} failed: ${res.status} ${await res.text()}`);
-  return res.json();
-}
-
-async function graphPost(url, body) {
-  const token = await getToken();
-  const res = await fetch('https://graph.microsoft.com/v1.0' + url, {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`Graph POST ${url} failed: ${res.status} ${await res.text()}`);
-  return res.json();
-}
-
-async function graphPatch(url, body) {
-  const token = await getToken();
-  const res = await fetch('https://graph.microsoft.com/v1.0' + url, {
-    method: 'PATCH',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`Graph PATCH ${url} failed: ${res.status} ${await res.text()}`);
-  return res.json();
-}
-
-async function graphDelete(url) {
-  const token = await getToken();
-  const res = await fetch('https://graph.microsoft.com/v1.0' + url, {
-    method: 'DELETE',
-    headers: { Authorization: 'Bearer ' + token }
-  });
-  if (!res.ok) throw new Error(`Graph DELETE ${url} failed: ${res.status}`);
-}
-
-// ══════════════════════════════════════════════
-//  SharePoint list helpers
-// ══════════════════════════════════════════════
-async function getSiteId() {
-  const hostname = `${CONFIG.tenant}.sharepoint.com`;
-  const sitePath = CONFIG.siteUrl.replace(`https://${hostname}`,'');
-  const data = await graphGet(`/sites/${hostname}:${sitePath}`);
-  return data.id;
-}
-
-async function getOrCreateList(siteId, listName, columns) {
-  // Try to get existing list
-  try {
-    const lists = await graphGet(`/sites/${siteId}/lists?$filter=displayName eq '${listName}'`);
-    if (lists.value && lists.value.length > 0) return lists.value[0].id;
-  } catch(e) {}
-
-  // Create list
-  const list = await graphPost(`/sites/${siteId}/lists`, {
-    displayName: listName,
-    columns: columns,
-    list: { template: 'genericList' }
-  });
-  return list.id;
-}
-
-async function ensureLists(siteId) {
-  // HR_Tasks columns
-  const taskCols = [
-    { name: 'TaskTitle',   text: {} },
-    { name: 'Description', text: { allowMultipleLines: true } },
-    { name: 'DueDate',     dateTime: { format: 'dateOnly' } },
-    { name: 'Category',    text: {} },
-    { name: 'Assignees',   text: { allowMultipleLines: true } },
-    { name: 'Links',       text: { allowMultipleLines: true } }
-  ];
-  // HR_Completions columns
-  const compCols = [
-    { name: 'TaskId',      text: {} },
-    { name: 'AssigneeName',text: {} },
-    { name: 'CompletedOn', dateTime: {} }
-  ];
-
-  tasksListId       = await getOrCreateList(siteId, CONFIG.tasksListName, taskCols);
-  completionsListId = await getOrCreateList(siteId, CONFIG.completionsListName, compCols);
-}
-
-async function fetchTasks() {
-  const data = await graphGet(`/sites/${spSiteId}/lists/${tasksListId}/items?$expand=fields&$top=500`);
-  cachedTasks = data.value.map(item => ({
-    id:          item.id,
-    title:       item.fields.TaskTitle    || item.fields.Title || '',
-    desc:        item.fields.Description  || '',
-    due:         (item.fields.DueDate     || '').split('T')[0],
-    cat:         item.fields.Category     || '',
-    assignees:   JSON.parse(item.fields.Assignees || '[]'),
-    links:       JSON.parse(item.fields.Links     || '[]')
-  }));
-}
-
-async function fetchCompletions() {
-  const data = await graphGet(`/sites/${spSiteId}/lists/${completionsListId}/items?$expand=fields&$top=1000`);
-  cachedCompletions = data.value.map(item => ({
-    id:        item.id,
-    taskId:    item.fields.TaskId       || '',
-    assignee:  item.fields.AssigneeName || ''
-  }));
-}
-
-// ══════════════════════════════════════════════
-//  Bootstrap
-// ══════════════════════════════════════════════
-async function bootstrap() {
-  try {
-    setLoading('Connecting to Microsoft 365…');
-    const account = window._msalInstance.getActiveAccount() || window._msalInstance.getAllAccounts()[0];
-    if (!account) { showScreen('signin-screen'); return; }
-
-    currentUser = {
-      name:     account.name || account.username,
-      initials: (account.name || account.username).split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase()
-    };
-
-    setLoading('Connecting to SharePoint…');
-    spSiteId = await getSiteId();
-
-    setLoading('Setting up HR lists…');
-    await ensureLists(spSiteId);
-
-    setLoading('Loading tasks…');
-    await fetchTasks();
-    await fetchCompletions();
-
-    // Populate UI user info
-    document.getElementById('user-name').textContent    = currentUser.name;
-    document.getElementById('user-avatar').textContent  = currentUser.initials;
-
-    showScreen('portal-screen');
-    renderMyTasks();
-    renderAllTasks();
-    renderManage();
-
-  } catch(e) {
-    showError('Could not connect to SharePoint: ' + (e.message || e));
-    console.error(e);
-  }
-}
-
-// ══════════════════════════════════════════════
-//  Utility
-// ══════════════════════════════════════════════
-function today()    { return new Date().toISOString().split('T')[0]; }
-function fmtDate(d) { if(!d) return '—'; const [y,m,dy]=d.split('-'); return `${dy}/${m}/${y}`; }
-function initials(n){ return n.split(' ').map(p=>p[0]).join(''); }
-
-function isCompleted(taskId, assignee) {
-  return cachedCompletions.some(c => c.taskId === String(taskId) && c.assignee === assignee);
-}
-function isOverdue(task, assignee) {
-  return task.due < today() && !isCompleted(task.id, assignee);
-}
-
-function dueBadge(task, assignee) {
-  if (isCompleted(task.id, assignee)) return '<span class="badge badge-green">&#10003; Complete</span>';
-  if (task.due < today())              return '<span class="badge badge-red">Overdue</span>';
-  const days = Math.ceil((new Date(task.due) - new Date(today())) / 86400000);
-  if (days <= 7)                       return '<span class="badge badge-orange">Due soon</span>';
-  return '<span class="badge badge-gray">Upcoming</span>';
-}
-
-// ══════════════════════════════════════════════
-//  Render: My Tasks
-// ══════════════════════════════════════════════
-function renderMyTasks() {
-  const userName = currentUser ? currentUser.name : '';
-  const myT  = cachedTasks.filter(t => t.assignees.includes(userName));
-  const done = myT.filter(t => isCompleted(t.id, userName)).length;
-  const over = myT.filter(t => isOverdue(t, userName)).length;
-
-  document.getElementById('my-stats').innerHTML = `
-    <div class="stat-card"><div class="num">${myT.length}</div><div class="lbl">Assigned</div></div>
-    <div class="stat-card"><div class="num">${done}</div><div class="lbl">Complete</div></div>
-    <div class="stat-card"><div class="num">${myT.length - done}</div><div class="lbl">Pending</div></div>
-    <div class="stat-card"><div class="num">${over}</div><div class="lbl">Overdue</div></div>
-  `;
-
-  if (!myT.length) {
-    document.getElementById('my-task-list').innerHTML = '<div class="empty-msg">No tasks assigned to you yet.</div>';
-    return;
-  }
-
-  document.getElementById('my-task-list').innerHTML = myT.map(t => {
-    const done  = isCompleted(t.id, userName);
-    const links = t.links.length
-      ? '<div class="task-links">' + t.links.map(l => `<a href="${l}" target="_blank">&#128279; ${l.replace(/^https?:\/\//,'').split('/')[0]}</a>`).join('') + '</div>'
-      : '';
-    return `<div class="task-card${done?' completed':''}">
-      <div class="task-top">
-        <div style="flex:1;min-width:0">
-          <div class="task-name${done?' done':''}">${t.title}</div>
-          <div class="task-meta">
-            ${dueBadge(t, userName)}
-            <span class="badge badge-blue">${t.cat}</span>
-            <span style="font-size:11.5px;color:var(--grey-400)">Due ${fmtDate(t.due)}</span>
-          </div>
-          <div class="task-desc">${t.desc}</div>
-          ${links}
-        </div>
-        <button class="complete-btn${done?' done':''}" id="btn-${t.id}" onclick="toggleComplete('${t.id}','${userName.replace(/'/g,"\\'")}')">
-          ${done ? '&#10003; Done' : 'Mark done'}
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════
-//  Render: All Tasks
-// ══════════════════════════════════════════════
-function renderAllTasks() {
-  const fp = document.getElementById('filter-person').value;
-  const fs = document.getElementById('filter-status').value;
-
-  const total       = cachedTasks.length;
-  const allDone     = cachedCompletions.length;
-  const allAssigned = cachedTasks.reduce((a,t) => a + t.assignees.length, 0);
-  const allOverdue  = cachedTasks.reduce((a,t) => a + t.assignees.filter(p => isOverdue(t,p)).length, 0);
-
-  document.getElementById('all-stats').innerHTML = `
-    <div class="stat-card"><div class="num">${total}</div><div class="lbl">Total tasks</div></div>
-    <div class="stat-card"><div class="num">${allDone}</div><div class="lbl">Completions</div></div>
-    <div class="stat-card"><div class="num">${allAssigned - allDone}</div><div class="lbl">Outstanding</div></div>
-    <div class="stat-card"><div class="num">${allOverdue}</div><div class="lbl">Overdue items</div></div>
-  `;
-
-  let visible = cachedTasks;
-  if (fp) visible = visible.filter(t => t.assignees.includes(fp));
-  if (fs === 'complete') visible = visible.filter(t => (fp ? [fp] : t.assignees).every(p => isCompleted(t.id, p)));
-  if (fs === 'pending')  visible = visible.filter(t => (fp ? [fp] : t.assignees).some(p => !isCompleted(t.id, p)));
-  if (fs === 'overdue')  visible = visible.filter(t => (fp ? [fp] : t.assignees).some(p => isOverdue(t, p)));
-
-  if (!visible.length) {
-    document.getElementById('all-task-list').innerHTML = '<div class="empty-msg">No tasks match the selected filters.</div>';
-    return;
-  }
-
-  document.getElementById('all-task-list').innerHTML = visible.map(t => `
-    <div class="task-card">
-      <div class="task-top">
-        <div style="flex:1;min-width:0">
-          <div class="task-name">${t.title}</div>
-          <div class="task-meta">
-            <span class="badge badge-blue">${t.cat}</span>
-            <span style="font-size:11.5px;color:var(--grey-400)">Due ${fmtDate(t.due)}</span>
-          </div>
-          <div class="avatars-row">
-            ${t.assignees.map(p => {
-              const cl = isCompleted(t.id,p) ? 'av-done' : isOverdue(t,p) ? 'av-overdue' : 'av-pending';
-              const st = isCompleted(t.id,p) ? 'Complete' : isOverdue(t,p) ? 'Overdue' : 'Pending';
-              return `<span class="avatar ${cl}" title="${p} — ${st}">${initials(p)}</span>`;
-            }).join('')}
-          </div>
-          ${t.links.length ? '<div class="task-links">'+t.links.map(l=>`<a href="${l}" target="_blank">&#128279; ${l.replace(/^https?:\/\//,'').split('/')[0]}</a>`).join('')+'</div>' : ''}
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-// ══════════════════════════════════════════════
-//  Render: Manage table
-// ══════════════════════════════════════════════
-function renderManage() {
-  const tbody = document.getElementById('manage-tbody');
-  if (!cachedTasks.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">No tasks yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML = cachedTasks.map(t => {
-    const doneCount = t.assignees.filter(p => isCompleted(t.id, p)).length;
-    return `<tr>
-      <td title="${t.title}" style="font-weight:500">${t.title}</td>
-      <td><div style="display:flex;flex-wrap:wrap;gap:3px">
-        ${t.assignees.map(p=>`<span class="avatar av-pending" style="width:24px;height:24px;font-size:9px" title="${p}">${initials(p)}</span>`).join('')}
-      </div></td>
-      <td>${fmtDate(t.due)}</td>
-      <td><span class="badge badge-blue" style="font-size:10px">${t.cat}</span></td>
-      <td style="color:var(--grey-600)">${doneCount}/${t.assignees.length} done</td>
-      <td><button class="del-btn" id="del-${t.id}" onclick="deleteTask('${t.id}')">Delete</button></td>
-    </tr>`;
-  }).join('');
-}
-
-// ══════════════════════════════════════════════
-//  Actions
-// ══════════════════════════════════════════════
-async function toggleComplete(taskId, assignee) {
-  const btn = document.getElementById('btn-' + taskId);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="inline-spinner"></span>'; }
-
-  try {
-    const existing = cachedCompletions.find(c => c.taskId === String(taskId) && c.assignee === assignee);
-    if (existing) {
-      // Mark incomplete — delete the completion record
-      await graphDelete(`/sites/${spSiteId}/lists/${completionsListId}/items/${existing.id}`);
-      cachedCompletions = cachedCompletions.filter(c => c.id !== existing.id);
-    } else {
-      // Mark complete — create a completion record
-      const result = await graphPost(`/sites/${spSiteId}/lists/${completionsListId}/items`, {
-        fields: {
-          TaskId:       String(taskId),
-          AssigneeName: assignee,
-          CompletedOn:  new Date().toISOString()
-        }
-      });
-      cachedCompletions.push({ id: result.id, taskId: String(taskId), assignee });
-    }
-    renderMyTasks();
-    renderAllTasks();
-    renderManage();
-  } catch(e) {
-    showToast('Error saving: ' + e.message, true);
-    if (btn) { btn.disabled = false; btn.textContent = 'Mark done'; }
-  }
-}
-
-async function addTask() {
-  const title     = document.getElementById('f-title').value.trim();
-  const desc      = document.getElementById('f-desc').value.trim();
-  const due       = document.getElementById('f-due').value;
-  const cat       = document.getElementById('f-cat').value;
-  const rawLinks  = document.getElementById('f-links').value.trim();
-  const links     = rawLinks ? rawLinks.split(',').map(l=>l.trim()).filter(Boolean) : [];
-  const assignees = [...document.querySelectorAll('.checkbox-group input:checked')].map(c=>c.value);
-
-  if (!title)           { alert('Please enter a task title.'); return; }
-  if (!due)             { alert('Please select a due date.'); return; }
-  if (!assignees.length){ alert('Please assign to at least one person.'); return; }
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="inline-spinner"></span> Saving…';
-
-  try {
-    const result = await graphPost(`/sites/${spSiteId}/lists/${tasksListId}/items`, {
-      fields: {
-        TaskTitle:   title,
-        Description: desc,
-        DueDate:     due,
-        Category:    cat,
-        Assignees:   JSON.stringify(assignees),
-        Links:       JSON.stringify(links)
-      }
+// Graph helpers
+function gGet(url) {
+  return getToken().then(function(tok) {
+    return fetch('https://graph.microsoft.com/v1.0'+url, {
+      headers:{ Authorization:'Bearer '+tok, Accept:'application/json' }
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t){ throw new Error('GET '+url+' => '+r.status+' '+t); });
+      return r.json();
     });
+  });
+}
+function gPost(url, body) {
+  return getToken().then(function(tok) {
+    return fetch('https://graph.microsoft.com/v1.0'+url, {
+      method:'POST',
+      headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' },
+      body:JSON.stringify(body)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t){ throw new Error('POST '+url+' => '+r.status+' '+t); });
+      return r.json();
+    });
+  });
+}
+function gDel(url) {
+  return getToken().then(function(tok) {
+    return fetch('https://graph.microsoft.com/v1.0'+url, {
+      method:'DELETE', headers:{ Authorization:'Bearer '+tok }
+    }).then(function(r){ if (!r.ok) throw new Error('DELETE '+url+' => '+r.status); });
+  });
+}
 
-    cachedTasks.push({ id: result.id, title, desc, due, cat, assignees, links });
+// SharePoint
+function tryParse(s, def) { try{ return JSON.parse(s||''); }catch(e){ return def; } }
+function getSiteId() {
+  var host=CFG.tenant+'.sharepoint.com';
+  var path=CFG.siteUrl.replace('https://'+host,'');
+  return gGet('/sites/'+host+':'+path).then(function(d){ return d.id; });
+}
+function getOrCreateList(sid, name, cols) {
+  return gGet('/sites/'+sid+'/lists?$filter=displayName eq \''+name+'\'').then(function(d) {
+    if (d.value&&d.value.length>0) return d.value[0].id;
+    return gPost('/sites/'+sid+'/lists',{displayName:name,columns:cols,list:{template:'genericList'}}).then(function(l){return l.id;});
+  }).catch(function() {
+    return gPost('/sites/'+sid+'/lists',{displayName:name,columns:cols,list:{template:'genericList'}}).then(function(l){return l.id;});
+  });
+}
+function ensureLists(sid) {
+  var tc=[{name:'TaskTitle',text:{}},{name:'Description',text:{allowMultipleLines:true}},{name:'DueDate',dateTime:{format:'dateOnly'}},{name:'Category',text:{}},{name:'Assignees',text:{allowMultipleLines:true}},{name:'Links',text:{allowMultipleLines:true}}];
+  var cc=[{name:'TaskId',text:{}},{name:'AssigneeName',text:{}},{name:'CompletedOn',dateTime:{}}];
+  return getOrCreateList(sid,CFG.listTasks,tc).then(function(id){gTLId=id;return getOrCreateList(sid,CFG.listComps,cc);}).then(function(id){gCLId=id;});
+}
+function fetchTasks() {
+  return gGet('/sites/'+gSiteId+'/lists/'+gTLId+'/items?$expand=fields&$top=500').then(function(d) {
+    gTasks=d.value.map(function(i){return{id:i.id,title:i.fields.TaskTitle||i.fields.Title||'',desc:i.fields.Description||'',due:(i.fields.DueDate||'').split('T')[0],cat:i.fields.Category||'',assignees:tryParse(i.fields.Assignees,[]),links:tryParse(i.fields.Links,[])};});
+  });
+}
+function fetchComps() {
+  return gGet('/sites/'+gSiteId+'/lists/'+gCLId+'/items?$expand=fields&$top=1000').then(function(d) {
+    gComps=d.value.map(function(i){return{id:i.id,taskId:i.fields.TaskId||'',assignee:i.fields.AssigneeName||''};});
+  });
+}
 
-    // Reset form
-    document.getElementById('f-title').value  = '';
-    document.getElementById('f-desc').value   = '';
-    document.getElementById('f-due').value    = '';
-    document.getElementById('f-links').value  = '';
-    document.querySelectorAll('.checkbox-group input').forEach(c => c.checked = false);
+// Bootstrap — called after successful auth
+function bootstrap() {
+  setLoading('Connecting to Microsoft 365…');
+  var acct=gMsal.getActiveAccount()||gMsal.getAllAccounts()[0];
+  if (!acct){showScreen('s-signin');return;}
+  gUser={name:acct.name||acct.username,ini:(acct.name||acct.username).split(' ').map(function(p){return p[0];}).join('').slice(0,2).toUpperCase()};
+  setLoading('Connecting to SharePoint…');
+  getSiteId().then(function(id){gSiteId=id;setLoading('Setting up lists…');return ensureLists(id);})
+  .then(function(){setLoading('Loading tasks…');return fetchTasks();})
+  .then(function(){return fetchComps();})
+  .then(function(){
+    document.getElementById('uname').textContent=gUser.name;
+    document.getElementById('uav').textContent=gUser.ini;
+    document.getElementById('sobtn').onclick=doSignOut;
+    showScreen('portal');
+    renderMy();renderAll();renderManage();
+  }).catch(function(e){showFatalError('SharePoint error: '+(e.message||String(e)));console.error(e);});
+}
 
-    renderMyTasks(); renderAllTasks(); renderManage();
+// Utility
+function today(){return new Date().toISOString().split('T')[0];}
+function fmt(d){if(!d)return '—';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function ini(n){return n.split(' ').map(function(p){return p[0];}).join('');}
+function isComp(tid,name){return gComps.some(function(c){return c.taskId===String(tid)&&c.assignee===name;});}
+function isOver(t,name){return t.due<today()&&!isComp(t.id,name);}
+function dueBadge(t,name){
+  if(isComp(t.id,name))return '<span class="badge bgr">&#10003; Complete</span>';
+  if(t.due<today())return '<span class="badge bre">Overdue</span>';
+  var d=Math.ceil((new Date(t.due)-new Date(today()))/86400000);
+  if(d<=7)return '<span class="badge bor">Due soon</span>';
+  return '<span class="badge bgy">Upcoming</span>';
+}
+function sc(n,l){return '<div class="sc"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
+
+// Render My Tasks
+function renderMy(){
+  var u=gUser?gUser.name:'';
+  var mt=gTasks.filter(function(t){return t.assignees.indexOf(u)>=0;});
+  var dn=mt.filter(function(t){return isComp(t.id,u);}).length;
+  var ov=mt.filter(function(t){return isOver(t,u);}).length;
+  document.getElementById('my-stats').innerHTML=sc(mt.length,'Assigned')+sc(dn,'Complete')+sc(mt.length-dn,'Pending')+sc(ov,'Overdue');
+  if(!mt.length){document.getElementById('my-list').innerHTML='<div class="empty">No tasks assigned to you yet.</div>';return;}
+  document.getElementById('my-list').innerHTML=mt.map(function(t){
+    var d=isComp(t.id,u);
+    var lk=t.links.length?'<div class="tlinks">'+t.links.map(function(l){return '<a href="'+l+'" target="_blank">&#128279; '+l.replace(/^https?:\/\//,'').split('/')[0]+'</a>';}).join('')+'</div>':'';
+    return '<div class="tc'+(d?' done':'')+'"><div class="ttop"><div style="flex:1;min-width:0"><div class="tn'+(d?' struck':'')+'">'+t.title+'</div><div class="tmeta">'+dueBadge(t,u)+'<span class="badge bbl">'+t.cat+'</span><span style="font-size:11.5px;color:var(--g400)">Due '+fmt(t.due)+'</span></div><div class="tdesc">'+t.desc+'</div>'+lk+'</div><button class="cbtn'+(d?' dn':'')+'" id="cb-'+t.id+'" onclick="toggleComp(\''+t.id+'\',\''+u.replace(/'/g,"\\'")+'\')">'+(d?'&#10003; Done':'Mark done')+'</button></div></div>';
+  }).join('');
+}
+
+// Render All Tasks
+function renderAll(){
+  var fp=document.getElementById('fp').value;
+  var fs=document.getElementById('fs').value;
+  var tot=gTasks.length,adn=gComps.length;
+  var aas=gTasks.reduce(function(a,t){return a+t.assignees.length;},0);
+  var aov=gTasks.reduce(function(a,t){return a+t.assignees.filter(function(p){return isOver(t,p);}).length;},0);
+  document.getElementById('all-stats').innerHTML=sc(tot,'Total tasks')+sc(adn,'Completions')+sc(aas-adn,'Outstanding')+sc(aov,'Overdue items');
+  var vis=gTasks.slice();
+  if(fp)vis=vis.filter(function(t){return t.assignees.indexOf(fp)>=0;});
+  if(fs==='complete')vis=vis.filter(function(t){return(fp?[fp]:t.assignees).every(function(p){return isComp(t.id,p);});});
+  if(fs==='pending')vis=vis.filter(function(t){return(fp?[fp]:t.assignees).some(function(p){return !isComp(t.id,p);});});
+  if(fs==='overdue')vis=vis.filter(function(t){return(fp?[fp]:t.assignees).some(function(p){return isOver(t,p);});});
+  if(!vis.length){document.getElementById('all-list').innerHTML='<div class="empty">No tasks match filters.</div>';return;}
+  document.getElementById('all-list').innerHTML=vis.map(function(t){
+    var avs=t.assignees.map(function(p){var cl=isComp(t.id,p)?'avd':isOver(t,p)?'avo':'avp';return '<span class="av '+cl+'" title="'+p+'">'+ini(p)+'</span>';}).join('');
+    var lk=t.links.length?'<div class="tlinks">'+t.links.map(function(l){return '<a href="'+l+'" target="_blank">&#128279; '+l.replace(/^https?:\/\//,'').split('/')[0]+'</a>';}).join('')+'</div>':'';
+    return '<div class="tc"><div class="ttop"><div style="flex:1;min-width:0"><div class="tn">'+t.title+'</div><div class="tmeta"><span class="badge bbl">'+t.cat+'</span><span style="font-size:11.5px;color:var(--g400)">Due '+fmt(t.due)+'</span></div><div class="avrow">'+avs+'</div>'+lk+'</div></div></div>';
+  }).join('');
+}
+
+// Render Manage
+function renderManage(){
+  var tb=document.getElementById('mtbody');
+  if(!gTasks.length){tb.innerHTML='<tr><td colspan="6" class="empty">No tasks yet.</td></tr>';return;}
+  tb.innerHTML=gTasks.map(function(t){
+    var dc=t.assignees.filter(function(p){return isComp(t.id,p);}).length;
+    var avs=t.assignees.map(function(p){return '<span class="av avp" style="width:24px;height:24px;font-size:9px" title="'+p+'">'+ini(p)+'</span>';}).join('');
+    return '<tr><td title="'+t.title+'" style="font-weight:500">'+t.title+'</td><td><div style="display:flex;flex-wrap:wrap;gap:3px">'+avs+'</div></td><td>'+fmt(t.due)+'</td><td><span class="badge bbl" style="font-size:10px">'+t.cat+'</span></td><td style="color:var(--g600)">'+dc+'/'+t.assignees.length+' done</td><td><button class="dbtn" id="db-'+t.id+'" onclick="delTask(\''+t.id+'\')">Delete</button></td></tr>';
+  }).join('');
+}
+
+// Actions
+function toggleComp(tid,name){
+  var btn=document.getElementById('cb-'+tid);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="isp"></span>';}
+  var ex=null;
+  for(var i=0;i<gComps.length;i++){if(gComps[i].taskId===String(tid)&&gComps[i].assignee===name){ex=gComps[i];break;}}
+  var p=ex
+    ?gDel('/sites/'+gSiteId+'/lists/'+gCLId+'/items/'+ex.id).then(function(){gComps=gComps.filter(function(c){return c.id!==ex.id;});})
+    :gPost('/sites/'+gSiteId+'/lists/'+gCLId+'/items',{fields:{TaskId:String(tid),AssigneeName:name,CompletedOn:new Date().toISOString()}}).then(function(r){gComps.push({id:r.id,taskId:String(tid),assignee:name});});
+  p.then(function(){renderMy();renderAll();renderManage();}).catch(function(e){showToast('Error: '+e.message,true);if(btn){btn.disabled=false;btn.textContent='Mark done';}});
+}
+function addTask(){
+  var title=document.getElementById('f-title').value.trim();
+  var desc=document.getElementById('f-desc').value.trim();
+  var due=document.getElementById('f-due').value;
+  var cat=document.getElementById('f-cat').value;
+  var raw=document.getElementById('f-links').value.trim();
+  var links=raw?raw.split(',').map(function(l){return l.trim();}).filter(Boolean):[];
+  var asgn=[];
+  var cbs=document.querySelectorAll('.cbxg input:checked');
+  for(var i=0;i<cbs.length;i++)asgn.push(cbs[i].value);
+  if(!title){alert('Please enter a task title.');return;}
+  if(!due){alert('Please select a due date.');return;}
+  if(!asgn.length){alert('Please assign to at least one person.');return;}
+  var btn=document.getElementById('addbtn');
+  btn.disabled=true;btn.innerHTML='<span class="isp"></span> Saving…';
+  gPost('/sites/'+gSiteId+'/lists/'+gTLId+'/items',{fields:{TaskTitle:title,Description:desc,DueDate:due,Category:cat,Assignees:JSON.stringify(asgn),Links:JSON.stringify(links)}})
+  .then(function(r){
+    gTasks.push({id:r.id,title:title,desc:desc,due:due,cat:cat,assignees:asgn,links:links});
+    document.getElementById('f-title').value='';
+    document.getElementById('f-desc').value='';
+    document.getElementById('f-due').value='';
+    document.getElementById('f-links').value='';
+    var allcbs=document.querySelectorAll('.cbxg input');
+    for(var i=0;i<allcbs.length;i++)allcbs[i].checked=false;
+    renderMy();renderAll();renderManage();
     showToast('Task assigned successfully!');
-  } catch(e) {
-    showToast('Error creating task: ' + e.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Assign task';
-  }
+  }).catch(function(e){showToast('Error: '+e.message,true);})
+  .then(function(){btn.disabled=false;btn.textContent='Assign task';});
 }
-
-async function deleteTask(taskId) {
-  if (!confirm('Delete this task and all its completion records?')) return;
-
-  const btn = document.getElementById('del-' + taskId);
-  if (btn) btn.disabled = true;
-
-  try {
-    await graphDelete(`/sites/${spSiteId}/lists/${tasksListId}/items/${taskId}`);
-
-    // Delete related completions
-    const related = cachedCompletions.filter(c => c.taskId === String(taskId));
-    await Promise.all(related.map(c => graphDelete(`/sites/${spSiteId}/lists/${completionsListId}/items/${c.id}`)));
-
-    cachedTasks       = cachedTasks.filter(t => t.id !== taskId);
-    cachedCompletions = cachedCompletions.filter(c => c.taskId !== String(taskId));
-
-    renderMyTasks(); renderAllTasks(); renderManage();
-    showToast('Task deleted.');
-  } catch(e) {
-    showToast('Error deleting task: ' + e.message, true);
-    if (btn) btn.disabled = false;
-  }
+function delTask(tid){
+  if(!confirm('Delete this task and all completion records?'))return;
+  var btn=document.getElementById('db-'+tid);
+  if(btn)btn.disabled=true;
+  var related=gComps.filter(function(c){return c.taskId===String(tid);});
+  gDel('/sites/'+gSiteId+'/lists/'+gTLId+'/items/'+tid)
+  .then(function(){return Promise.all(related.map(function(c){return gDel('/sites/'+gSiteId+'/lists/'+gCLId+'/items/'+c.id);}));})
+  .then(function(){
+    gTasks=gTasks.filter(function(t){return t.id!==tid;});
+    gComps=gComps.filter(function(c){return c.taskId!==String(tid);});
+    renderMy();renderAll();renderManage();showToast('Task deleted.');
+  }).catch(function(e){showToast('Error: '+e.message,true);if(btn)btn.disabled=false;});
 }
-
-// ══════════════════════════════════════════════
-//  UI helpers
-// ══════════════════════════════════════════════
-function showToast(msg, isError = false) {
-  const el   = document.getElementById('toast-msg');
-  const text = document.getElementById('toast-text');
-  text.textContent = msg;
-  el.classList.toggle('error', isError);
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 4000);
+function showToast(msg,isErr){
+  var el=document.getElementById('toast'),tx=document.getElementById('toasttxt');
+  tx.textContent=msg;el.classList.toggle('err',!!isErr);el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},4000);
 }
-
-function switchTab(tab, e) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+function switchTab(name,e){
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');
+  var panels=document.querySelectorAll('.panel');
+  for(var i=0;i<panels.length;i++)panels[i].classList.remove('active');
   e.currentTarget.classList.add('active');
-  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
 }
 
-// ══════════════════════════════════════════════
-//  Entry point — called once MSAL script tag loads
-// ══════════════════════════════════════════════
-function onMSALLoaded() {
-  var msalConfig = {
+// ── STARTUP ──────────────────────────────────────
+// Step 1: show loading
+setLoading('Loading…');
+
+// Step 2: inject MSAL script tag — onload callback guarantees library is ready
+var msalScript = document.createElement('script');
+msalScript.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+
+msalScript.onload = function() {
+  // Step 3: MSAL is now defined — safe to use
+  var msalCfg = {
     auth: {
-      clientId:    CONFIG.clientId,
-      authority:   'https://login.microsoftonline.com/' + CONFIG.tenantId,
-      redirectUri: window.location.origin + window.location.pathname
+      clientId:    CFG.clientId,
+      authority:   'https://login.microsoftonline.com/'+CFG.tenantId,
+      redirectUri: window.location.origin+window.location.pathname
     },
-    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+    cache:{ cacheLocation:'sessionStorage', storeAuthStateInCookie:false }
   };
+  gMsal = new msal.PublicClientApplication(msalCfg);
 
-  var instance = new msal.PublicClientApplication(msalConfig);
-  window._msalInstance = instance;
-
-  instance.initialize().then(function() {
-    msalReady = true;
-    return instance.handleRedirectPromise();
-  }).then(function(redirectResult) {
-    if (redirectResult && redirectResult.account) {
-      instance.setActiveAccount(redirectResult.account);
+  // Step 4: initialize then handle any redirect response
+  gMsal.initialize().then(function() {
+    // Wire up sign-in button now that gMsal is ready
+    document.getElementById('sinbtn').onclick = doSignIn;
+    return gMsal.handleRedirectPromise();
+  }).then(function(res) {
+    if (res && res.account) {
+      gMsal.setActiveAccount(res.account);
       bootstrap();
       return;
     }
-    var accounts = instance.getAllAccounts();
-    if (accounts.length > 0) {
-      instance.setActiveAccount(accounts[0]);
+    var accts = gMsal.getAllAccounts();
+    if (accts.length > 0) {
+      gMsal.setActiveAccount(accts[0]);
       bootstrap();
     } else {
-      showScreen('signin-screen');
+      showScreen('s-signin');
     }
   }).catch(function(e) {
-    showError('Initialisation error: ' + (e.message || String(e)));
+    showFatalError('Initialisation error: '+(e.message||String(e)));
   });
-}
+};
 
-function onMSALError() {
-  showError('Could not load the authentication library. Please check your internet connection and refresh.');
-}
-
-// Inject MSAL script tag — most reliable cross-browser loading method
-(function() {
-  setLoading('Loading…');
-  var s = document.createElement('script');
-  s.src    = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
-  s.onload = function() { onMSALLoaded(); };
-  s.onerror = function() {
-    // Try unpkg fallback
-    var s2 = document.createElement('script');
-    s2.src    = 'https://unpkg.com/@azure/msal-browser@2.38.3/dist/msal-browser.min.js';
-    s2.onload = function() { onMSALLoaded(); };
-    s2.onerror = function() { onMSALError(); };
-    document.body.appendChild(s2);
+msalScript.onerror = function() {
+  // Fallback to secondary Microsoft CDN
+  var s2 = document.createElement('script');
+  s2.src = 'https://alcdn.msftauth.net/browser/2.38.3/js/msal-browser.min.js';
+  s2.onload = msalScript.onload;
+  s2.onerror = function() {
+    showFatalError('Could not load the authentication library. Please check your internet connection and try again.');
   };
-  document.body.appendChild(s);
-})();
+  document.body.appendChild(s2);
+};
+
+document.body.appendChild(msalScript);
 </script>
 </body>
 </html>
