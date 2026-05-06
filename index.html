@@ -487,12 +487,10 @@ function switchTab(name,e){
 }
 
 // ── STARTUP ──────────────────────────────────────
-// Step 1: show loading
 setLoading('Loading…');
 
-// Step 2: inject MSAL script tag — onload callback guarantees library is ready
 var msalScript = document.createElement('script');
-msalScript.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+msalScript.src = './msal-browser.min.js';
 
 msalScript.onload = function() {
   // Step 3: MSAL is now defined — safe to use
@@ -530,14 +528,7 @@ msalScript.onload = function() {
 };
 
 msalScript.onerror = function() {
-  // Fallback to secondary Microsoft CDN
-  var s2 = document.createElement('script');
-  s2.src = 'https://alcdn.msftauth.net/browser/2.38.3/js/msal-browser.min.js';
-  s2.onload = msalScript.onload;
-  s2.onerror = function() {
-    showFatalError('Could not load the authentication library. Please check your internet connection and try again.');
-  };
-  document.body.appendChild(s2);
+  showFatalError('Could not load msal-browser.min.js — please make sure it is uploaded to your GitHub repository.');
 };
 
 document.body.appendChild(msalScript);
