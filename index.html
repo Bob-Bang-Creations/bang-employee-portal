@@ -507,28 +507,25 @@
 
 <script>
 // ══════════════════════════════════════════════
-//  CONFIG — Bang Creations
+//  All variables declared first — no hoisting issues
 // ══════════════════════════════════════════════
-const CONFIG = {
-  clientId:    'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
-  tenantId:    'a3f79504-fd00-417d-9194-0559070d1f8e',
-  siteUrl:     'https://bangcreations.sharepoint.com/sites/BANGTEAM',
-  tenant:      'bangcreations',
-  // SharePoint list names — create these in your SharePoint site
+var CONFIG = {
+  clientId:           'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
+  tenantId:           'a3f79504-fd00-417d-9194-0559070d1f8e',
+  siteUrl:            'https://bangcreations.sharepoint.com/sites/BANGTEAM',
+  tenant:             'bangcreations',
   tasksListName:      'HR_Tasks',
   completionsListName:'HR_Completions'
 };
 
-const SCOPES = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
-
-let msalReady         = false;
-let currentUser       = null;
-let accessToken       = null;
-let spSiteId          = null;
-let tasksListId       = null;
-let completionsListId = null;
-let cachedTasks       = [];
-let cachedCompletions = [];
+var SCOPES             = ['https://graph.microsoft.com/Sites.ReadWrite.All'];
+var msalReady          = false;
+var currentUser        = null;
+var spSiteId           = null;
+var tasksListId        = null;
+var completionsListId  = null;
+var cachedTasks        = [];
+var cachedCompletions  = [];
 
 // ══════════════════════════════════════════════
 //  Screens
@@ -550,26 +547,23 @@ function showError(msg)  { document.getElementById('error-msg').textContent = ms
 // ══════════════════════════════════════════════
 //  Auth
 // ══════════════════════════════════════════════
-async function signIn() {
-  if (!msalReady) {
-    const box = document.getElementById('signin-error');
-    box.textContent = 'Still initialising — please wait a moment and try again.';
+function signIn() {
+  if (!msalReady || !window._msalInstance) {
+    var box = document.getElementById('signin-error');
+    box.textContent = 'Still loading — please wait a moment and try again.';
     box.style.display = 'block';
     return;
   }
-  try {
-    document.getElementById('signin-error').style.display = 'none';
-    // Use redirect instead of popup — more reliable, avoids popup blockers
-    await window._msalInstance.loginRedirect({ scopes: SCOPES });
-  } catch(e) {
-    const box = document.getElementById('signin-error');
-    box.textContent = 'Sign-in failed: ' + (e.message || e);
+  document.getElementById('signin-error').style.display = 'none';
+  window._msalInstance.loginRedirect({ scopes: SCOPES }).catch(function(e) {
+    var box = document.getElementById('signin-error');
+    box.textContent = 'Sign-in failed: ' + (e.message || String(e));
     box.style.display = 'block';
-  }
+  });
 }
 
 function signOut() {
-  window._msalInstance.logoutRedirect();
+  if (window._msalInstance) window._msalInstance.logoutRedirect();
 }
 
 async function getToken() {
@@ -999,71 +993,61 @@ function switchTab(tab, e) {
 }
 
 // ══════════════════════════════════════════════
-//  Init — dynamically load MSAL then initialise
+//  Entry point — called once MSAL script tag loads
 // ══════════════════════════════════════════════
-function loadMSAL() {
-  return new Promise((resolve, reject) => {
-    // If already loaded, resolve immediately
-    if (typeof msal !== 'undefined') { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
-    script.onload  = () => resolve();
-    script.onerror = () => {
-      // Fallback to unpkg CDN if Microsoft CDN fails
-      const fallback = document.createElement('script');
-      fallback.src = 'https://unpkg.com/@azure/msal-browser@2.38.3/dist/msal-browser.min.js';
-      fallback.onload  = () => resolve();
-      fallback.onerror = () => reject(new Error('Failed to load MSAL from both CDNs'));
-      document.head.appendChild(fallback);
-    };
-    document.head.appendChild(script);
+function onMSALLoaded() {
+  var msalConfig = {
+    auth: {
+      clientId:    CONFIG.clientId,
+      authority:   'https://login.microsoftonline.com/' + CONFIG.tenantId,
+      redirectUri: window.location.origin + window.location.pathname
+    },
+    cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
+  };
+
+  var instance = new msal.PublicClientApplication(msalConfig);
+  window._msalInstance = instance;
+
+  instance.initialize().then(function() {
+    msalReady = true;
+    return instance.handleRedirectPromise();
+  }).then(function(redirectResult) {
+    if (redirectResult && redirectResult.account) {
+      instance.setActiveAccount(redirectResult.account);
+      bootstrap();
+      return;
+    }
+    var accounts = instance.getAllAccounts();
+    if (accounts.length > 0) {
+      instance.setActiveAccount(accounts[0]);
+      bootstrap();
+    } else {
+      showScreen('signin-screen');
+    }
+  }).catch(function(e) {
+    showError('Initialisation error: ' + (e.message || String(e)));
   });
 }
 
-(async () => {
-  try {
-    // Show loading while MSAL loads — don't show sign-in screen yet
-    setLoading('Loading authentication library…');
-    await loadMSAL();
+function onMSALError() {
+  showError('Could not load the authentication library. Please check your internet connection and refresh.');
+}
 
-    // Now safe to create the instance
-    const _msalConfig = {
-      auth: {
-        clientId:    CONFIG.clientId,
-        authority:   `https://login.microsoftonline.com/${CONFIG.tenantId}`,
-        redirectUri: window.location.href.split('?')[0].split('#')[0]
-      },
-      cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: false }
-    };
-
-    window._msalInstance = new msal.PublicClientApplication(_msalConfig);
-    await window._msalInstance.initialize();
-    msalReady = true;
-
-    // IMPORTANT: handleRedirectPromise catches the response when Microsoft
-    // redirects back to this page after a successful login
-    setLoading('Checking authentication…');
-    const redirectResult = await window._msalInstance.handleRedirectPromise();
-
-    if (redirectResult && redirectResult.account) {
-      // User just came back from Microsoft login redirect
-      window._msalInstance.setActiveAccount(redirectResult.account);
-      await bootstrap();
-      return;
-    }
-
-    // Check if already signed in from a previous session
-    const accounts = window._msalInstance.getAllAccounts();
-    if (accounts.length > 0) {
-      window._msalInstance.setActiveAccount(accounts[0]);
-      await bootstrap();
-    } else {
-      // Not signed in — show the sign-in screen
-      showScreen('signin-screen');
-    }
-  } catch(e) {
-    showError('Initialisation error: ' + (e.message || e));
-  }
+// Inject MSAL script tag — most reliable cross-browser loading method
+(function() {
+  setLoading('Loading…');
+  var s = document.createElement('script');
+  s.src    = 'https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js';
+  s.onload = function() { onMSALLoaded(); };
+  s.onerror = function() {
+    // Try unpkg fallback
+    var s2 = document.createElement('script');
+    s2.src    = 'https://unpkg.com/@azure/msal-browser@2.38.3/dist/msal-browser.min.js';
+    s2.onload = function() { onMSALLoaded(); };
+    s2.onerror = function() { onMSALError(); };
+    document.body.appendChild(s2);
+  };
+  document.body.appendChild(s);
 })();
 </script>
 </body>
