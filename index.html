@@ -709,10 +709,6 @@ function showToast(msg, isErr) {
   setTimeout(function(){ el.classList.remove('show'); }, 4000);
 }
 
-function applyHrAccess() {
-  // Tab is always visible — access is controlled on click via switchTab
-}
-
 function closeModal(e) {
   // Close if clicking the overlay backdrop, not the modal card itself
   if (e.target === document.getElementById('access-modal')) {
