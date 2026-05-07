@@ -98,6 +98,14 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 .assignee-actions button{font-family:var(--f);font-size:11px;font-weight:500;padding:3px 10px;border:1px solid var(--g200);background:transparent;border-radius:var(--rsm);cursor:pointer;color:var(--g600)}
 .assignee-actions button:hover{border-color:var(--or);color:var(--or)}
 .select-hint{font-size:11px;color:var(--g400);margin-top:4px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--w);border-radius:var(--rlg);padding:28px 28px 22px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18);text-align:center}
+.modal-icon{width:44px;height:44px;border-radius:50%;background:var(--rbg);color:var(--rtx);font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.modal-title{font-size:16px;font-weight:600;color:var(--g900);margin-bottom:8px}
+.modal-msg{font-size:13px;color:var(--g600);line-height:1.6;margin-bottom:20px}
+.modal-close{font-family:var(--f);background:var(--or);color:var(--w);border:none;border-radius:var(--rmd);padding:9px 24px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.modal-close:hover{background:var(--ord)}
 .sbtn{font-family:var(--f);background:var(--or);color:var(--w);border:none;border-radius:var(--rmd);padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(250,166,26,.25);transition:background .15s}
 .sbtn:hover{background:var(--ord)}
 .sbtn:disabled{opacity:.5;cursor:not-allowed}
@@ -224,23 +232,33 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
     </div>
 
   </div>
-</div>
+  <!-- Access denied modal -->
+  <div class="modal-overlay" id="access-modal" onclick="closeModal(event)">
+    <div class="modal">
+      <div class="modal-icon">&#128274;</div>
+      <div class="modal-title">Access restricted</div>
+      <div class="modal-msg">To manage HR tasks, you must be added to the 'HR Administrator' Entra Group.</div>
+      <button class="modal-close" onclick="document.getElementById('access-modal').classList.remove('show')">OK</button>
+    </div>
+  </div>
 
-<script>
+</div>
 // ── Config ───────────────────────────────────────────────
 var CFG = {
-  clientId:  'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
-  tenantId:  'a3f79504-fd00-417d-9194-0559070d1f8e',
-  siteUrl:   'https://bangcreations.sharepoint.com/sites/BANGTEAM',
-  tenant:    'bangcreations',
-  listTasks: 'HR_Tasks',
-  listComps: 'HR_Completions'
+  clientId:    'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
+  tenantId:    'a3f79504-fd00-417d-9194-0559070d1f8e',
+  siteUrl:     'https://bangcreations.sharepoint.com/sites/BANGTEAM',
+  tenant:      'bangcreations',
+  listTasks:   'HR_Tasks',
+  listComps:   'HR_Completions',
+  hrGroupId:   'cec65ee4-f9fc-4beb-9b68-2f08f4ec78e6'
 };
 
-// Scopes — includes User.ReadBasic.All for fetching org users
+// Scopes — includes User.ReadBasic.All and GroupMember.Read.All
 var SCOPES = [
   'https://graph.microsoft.com/Sites.ReadWrite.All',
-  'https://graph.microsoft.com/User.ReadBasic.All'
+  'https://graph.microsoft.com/User.ReadBasic.All',
+  'https://graph.microsoft.com/GroupMember.Read.All'
 ];
 
 // ── State ────────────────────────────────────────────────
@@ -252,6 +270,7 @@ var gCLId   = null;
 var gTasks  = [];
 var gComps  = [];
 var gUsers  = [];    // [{name, email}] — fetched from Graph
+var gIsHrAdmin = false; // whether signed-in user is in HR Administrator group
 
 // ── Screen helpers ───────────────────────────────────────
 function showScreen(id) {
@@ -273,7 +292,7 @@ function showFatalError(msg) { document.getElementById('errmsg').textContent=msg
 // ── Auth ─────────────────────────────────────────────────
 function doSignIn() {
   document.getElementById('sin-err').style.display='none';
-  gMsal.loginRedirect({ scopes: SCOPES, prompt: 'consent' }).catch(function(e) {
+  gMsal.loginRedirect({ scopes: SCOPES }).catch(function(e) {
     var el=document.getElementById('sin-err');
     el.textContent='Sign-in failed: '+(e.message||String(e));
     el.style.display='block';
@@ -320,9 +339,16 @@ function gDel(url) {
 
 // ── Fetch org users from Graph ───────────────────────────
 function fetchUsers() {
-  return gGet('/users?$select=displayName,mail,userPrincipalName&$top=100').then(function(d) {
+  // Fetch only users with an assigned Microsoft 365 licence
+  // assignedLicenses/any() filters out service accounts, shared mailboxes, disabled accounts etc.
+  return gGet('/users?$select=displayName,mail,userPrincipalName,assignedLicenses&$top=200').then(function(d) {
     gUsers = d.value
-      .filter(function(u){ return u.displayName && (u.mail || u.userPrincipalName); })
+      .filter(function(u){
+        return u.displayName
+          && (u.mail || u.userPrincipalName)
+          && u.assignedLicenses
+          && u.assignedLicenses.length > 0;
+      })
       .map(function(u){
         return {
           name:  u.displayName,
@@ -374,7 +400,28 @@ function clearAllAssignees() {
   }
 }
 
-// ── SharePoint helpers ───────────────────────────────────
+// ── Check HR Admin group membership ──────────────────────
+function checkHrAdmin() {
+  // Use checkMemberObjects for a direct, reliable group membership check
+  return gPost('/me/checkMemberObjects', { ids: [CFG.hrGroupId] }).then(function(d) {
+    gIsHrAdmin = d.value && d.value.indexOf(CFG.hrGroupId) >= 0;
+  }).catch(function() {
+    // If check fails, default to no access
+    gIsHrAdmin = false;
+  });
+}
+
+function applyHrAccess() {
+  var hrTab   = document.querySelector('.tab[onclick*="hr"]');
+  var hrPanel = document.getElementById('panel-hr');
+  if (gIsHrAdmin) {
+    if (hrTab)   hrTab.style.display   = '';
+    if (hrPanel) hrPanel.style.display = '';
+  } else {
+    if (hrTab)   hrTab.style.display   = 'none';
+    if (hrPanel) hrPanel.style.display = 'none';
+  }
+}
 function tryParse(s, def) { try{ return JSON.parse(s||''); }catch(e){ return def; } }
 
 function getSiteId() {
@@ -448,6 +495,10 @@ function bootstrap() {
   })
   .then(function(id) {
     gCLId = id;
+    setLoading('Checking permissions…');
+    return checkHrAdmin();
+  })
+  .then(function() {
     setLoading('Loading users…');
     return fetchUsers();
   })
@@ -463,6 +514,7 @@ function bootstrap() {
     document.getElementById('uav').textContent   = gUser.ini;
     document.getElementById('sobtn').onclick      = doSignOut;
     showScreen('portal');
+    applyHrAccess();
     renderMy();
     renderManage();
   })
@@ -657,7 +709,23 @@ function showToast(msg, isErr) {
   setTimeout(function(){ el.classList.remove('show'); }, 4000);
 }
 
+function applyHrAccess() {
+  // Tab is always visible — access is controlled on click via switchTab
+}
+
+function closeModal(e) {
+  // Close if clicking the overlay backdrop, not the modal card itself
+  if (e.target === document.getElementById('access-modal')) {
+    document.getElementById('access-modal').classList.remove('show');
+  }
+}
+
 function switchTab(name, e) {
+  // If non-admin clicks HR tab, show access denied modal and don't switch
+  if (name === 'hr' && !gIsHrAdmin) {
+    document.getElementById('access-modal').classList.add('show');
+    return;
+  }
   var tabs=document.querySelectorAll('.tab');
   for (var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
   var panels=document.querySelectorAll('.panel');
