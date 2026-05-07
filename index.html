@@ -273,7 +273,7 @@ function showFatalError(msg) { document.getElementById('errmsg').textContent=msg
 // ── Auth ─────────────────────────────────────────────────
 function doSignIn() {
   document.getElementById('sin-err').style.display='none';
-  gMsal.loginRedirect({ scopes: SCOPES }).catch(function(e) {
+  gMsal.loginRedirect({ scopes: SCOPES, prompt: 'consent' }).catch(function(e) {
     var el=document.getElementById('sin-err');
     el.textContent='Sign-in failed: '+(e.message||String(e));
     el.style.display='block';
@@ -320,8 +320,7 @@ function gDel(url) {
 
 // ── Fetch org users from Graph ───────────────────────────
 function fetchUsers() {
-  // Fetch all enabled member accounts — excludes guests and disabled accounts
-  return gGet('/users?$select=displayName,mail,userPrincipalName&$filter=accountEnabled eq true&$top=100').then(function(d) {
+  return gGet('/users?$select=displayName,mail,userPrincipalName&$top=100').then(function(d) {
     gUsers = d.value
       .filter(function(u){ return u.displayName && (u.mail || u.userPrincipalName); })
       .map(function(u){
