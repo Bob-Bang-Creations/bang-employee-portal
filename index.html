@@ -174,7 +174,8 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
   </header>
 
   <nav class="tabs">
-    <button class="tab active">HR Tasks</button>
+    <button class="tab active" onclick="switchTab('hr-tasks',this)">HR Tasks</button>
+    <button class="tab" onclick="switchTab('expenses',this)">Expenses</button>
   </nav>
 
   <div class="ca">
@@ -258,20 +259,149 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
       <div class="scards" id="my-stats"></div>
       <div id="my-list"></div>
     </div>
-  </div>
 
+    <!-- ══════════════════ EXPENSES PANEL ══════════════════ -->
+    <div class="panel" id="panel-expenses">
+      <div id="exp-toast" class="toast"><span id="exp-toasttxt"></span></div>
+
+      <!-- ── My Expenses ─────────────────────────────────── -->
+      <div class="my-divider" style="margin-top:0">
+        <div class="my-divider-line"></div>
+        <div class="my-divider-label">Log an expense</div>
+        <div class="my-divider-line"></div>
+      </div>
+
+      <!-- Expense type toggle -->
+      <div style="display:flex;gap:0;margin-bottom:18px;border:1.5px solid var(--or);border-radius:var(--rmd);overflow:hidden;width:fit-content">
+        <button id="exp-type-std" onclick="setExpType('standard')" style="font-family:var(--f);font-size:13px;font-weight:600;padding:8px 24px;border:none;cursor:pointer;background:var(--or);color:var(--w);transition:background .15s,color .15s">Standard</button>
+        <button id="exp-type-mil" onclick="setExpType('mileage')"  style="font-family:var(--f);font-size:13px;font-weight:600;padding:8px 24px;border:none;cursor:pointer;background:transparent;color:var(--or);transition:background .15s,color .15s">Mileage</button>
+      </div>
+
+      <!-- Standard expense form -->
+      <div id="exp-std-form">
+        <div class="fcard">
+          <div class="fg2">
+            <div class="fr"><label>Client number</label><input type="text" id="es-client" placeholder="e.g. C-1042"></div>
+            <div class="fr"><label>Project number</label><input type="text" id="es-project" placeholder="e.g. P-2024-07"></div>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label>Date of expense</label><input type="date" id="es-date"></div>
+            <div class="fr"><label>Description</label><input type="text" id="es-title" placeholder="e.g. Client lunch, train ticket…"></div>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label>Amount (£ inc. VAT if applicable)</label><input type="text" id="es-amount" placeholder="0.00" oninput="recalcVat()"></div>
+            <div class="fr">
+              <label>VAT</label>
+              <div style="display:flex;align-items:center;gap:14px;margin-top:2px">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--g900);font-weight:400">
+                  <input type="checkbox" id="es-hasvat" onchange="toggleVatRate()" style="width:15px;height:15px;accent-color:var(--or);cursor:pointer"> Includes VAT
+                </label>
+                <div id="es-vatrate-wrap" style="display:none;flex:1">
+                  <input type="text" id="es-vatrate" value="20" placeholder="20" style="width:80px;font-family:var(--f);font-size:13px;padding:6px 8px;border-radius:var(--rsm);border:1px solid var(--g200);outline:none" oninput="recalcVat()">
+                  <span style="font-size:12px;color:var(--g600);margin-left:4px">%</span>
+                </div>
+              </div>
+              <div id="es-vat-preview" style="font-size:12px;color:var(--g600);margin-top:6px"></div>
+            </div>
+          </div>
+          <div class="fr">
+            <label>Receipt <span style="font-weight:400;color:var(--g400)">(PDF or image — required)</span></label>
+            <input type="file" id="es-receipt" accept=".pdf,image/*" style="font-family:var(--f);font-size:13px;padding:8px 0;color:var(--g600)">
+          </div>
+          <button class="sbtn" id="es-addbtn" onclick="addStdExpense()">Log expense</button>
+        </div>
+      </div>
+
+      <!-- Mileage expense form -->
+      <div id="exp-mil-form" style="display:none">
+        <div class="fcard">
+          <div class="fg2">
+            <div class="fr"><label>Client number</label><input type="text" id="em-client" placeholder="e.g. C-1042"></div>
+            <div class="fr"><label>Project number</label><input type="text" id="em-project" placeholder="e.g. P-2024-07"></div>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label>Date of travel</label><input type="date" id="em-date"></div>
+            <div class="fr"><label>Purpose of travel</label><input type="text" id="em-title" placeholder="e.g. Site visit, client meeting…"></div>
+          </div>
+          <div class="fg2">
+            <div class="fr"><label>Distance (miles)</label><input type="text" id="em-distance" placeholder="0" oninput="recalcMileage()"></div>
+            <div class="fr">
+              <label>Rate (£ per mile)</label>
+              <input type="text" id="em-rate" value="0.45" placeholder="0.45" oninput="recalcMileage()">
+              <div id="em-preview" style="font-size:12px;color:var(--g600);margin-top:6px"></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--g400);margin-bottom:14px">VAT is not applicable for mileage expenses.</div>
+          <button class="sbtn" id="em-addbtn" onclick="addMilExpense()">Log mileage</button>
+        </div>
+      </div>
+
+      <!-- My logged expenses -->
+      <div class="my-divider">
+        <div class="my-divider-line"></div>
+        <div class="my-divider-label">My logged expenses</div>
+        <div class="my-divider-line"></div>
+      </div>
+      <div id="my-expenses-list"><div class="empty">Loading…</div></div>
+
+      <!-- ── Accounts Manager section ────────────────────── -->
+      <div id="acc-admin-section" class="admin-panel" style="display:none;margin-top:28px">
+        <div class="my-divider" style="margin-top:0">
+          <div class="my-divider-line"></div>
+          <div class="my-divider-label">Accounts Manager — All Expenses</div>
+          <div class="my-divider-line"></div>
+        </div>
+        <div style="margin-bottom:12px" id="acc-overview"></div>
+
+        <!-- Filter row -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">Filter:</span>
+          <button class="rbtn" id="accf-all"      onclick="setAccFilter('all')"      style="font-size:11px;padding:4px 14px">All</button>
+          <button class="rbtn" id="accf-std"      onclick="setAccFilter('standard')" style="font-size:11px;padding:4px 14px">Standard</button>
+          <button class="rbtn" id="accf-mil"      onclick="setAccFilter('mileage')"  style="font-size:11px;padding:4px 14px">Mileage</button>
+          <button class="rbtn" id="accf-unpro"    onclick="setAccFilter('unprocessed')" style="font-size:11px;padding:4px 14px">Unprocessed</button>
+        </div>
+
+        <div class="tblcard">
+          <table class="mtbl" style="table-layout:fixed">
+            <thead><tr>
+              <th style="width:16%">Employee</th>
+              <th style="width:18%">Description</th>
+              <th style="width:9%">Client</th>
+              <th style="width:9%">Project</th>
+              <th style="width:8%">Date</th>
+              <th style="width:7%">Type</th>
+              <th style="width:9%">Total</th>
+              <th style="width:9%">Ex-VAT</th>
+              <th style="width:8%">VAT</th>
+              <th style="width:7%">Status</th>
+            </tr></thead>
+            <tbody id="acc-tbody"></tbody>
+          </table>
+        </div>
+        <div id="acc-show-all-wrap" style="text-align:center;margin-bottom:6px;display:none">
+          <button class="rbtn" onclick="toggleAllExpenses()">Show all expenses</button>
+        </div>
+      </div>
+
+    </div><!-- /panel-expenses -->
+
+  </div>
 </div>
 
 <script>
 // ── Config ───────────────────────────────────────────────
 var CFG = {
-  clientId:    'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
-  tenantId:    'a3f79504-fd00-417d-9194-0559070d1f8e',
-  siteUrl:     'https://bangcreations.sharepoint.com/sites/BANGTEAM',
-  tenant:      'bangcreations',
-  listTasks:   'HR_Tasks',
-  listComps:   'HR_Completions',
-  hrGroupId:   'cec65ee4-f9fc-4beb-9b68-2f08f4ec78e6'
+  clientId:       'f023a1d2-c805-4fd1-80dc-79f4c7c75a50',
+  tenantId:       'a3f79504-fd00-417d-9194-0559070d1f8e',
+  siteUrl:        'https://bangcreations.sharepoint.com/sites/BANGTEAM',
+  tenant:         'bangcreations',
+  listTasks:      'HR_Tasks',
+  listComps:      'HR_Completions',
+  hrGroupId:      'cec65ee4-f9fc-4beb-9b68-2f08f4ec78e6',
+  listExpenses:   'expenses_data',
+  listMileage:    'mileage_data',
+  accGroupId:     'a6ec43fb-a114-4c72-81e5-064fd2080d58'
 };
 
 // Scopes — includes User.ReadBasic.All and GroupMember.Read.All
@@ -290,9 +420,30 @@ var gCLId   = null;
 var gTasks  = [];
 var gComps  = [];
 var gUsers  = [];    // [{name, email}] — fetched from Graph
-var gIsHrAdmin    = false; // whether signed-in user is in HR Administrator group
-var gShowAllTasks = false; // whether manage table is expanded beyond 5 rows
-var gMyFilter     = null;  // active My Tasks filter: null | 'pending' | 'overdue' | 'complete'
+var gIsHrAdmin    = false;
+var gShowAllTasks = false;
+var gMyFilter     = null;
+
+// Expenses state
+var gELId          = null;  // expenses_data list id
+var gMLId          = null;  // mileage_data list id
+var gIsAccMgr      = false;
+var gExpenses      = [];    // standard expenses
+var gMileage       = [];    // mileage records
+var gExpType       = 'standard'; // active log form
+var gAccFilter     = 'all';
+var gShowAllExp    = false;
+
+// ── Tab switching ────────────────────────────────────────
+function switchTab(name, btn) {
+  var panels = document.querySelectorAll('.panel');
+  for (var i=0; i<panels.length; i++) panels[i].classList.remove('active');
+  var tabs = document.querySelectorAll('.tab');
+  for (var i=0; i<tabs.length; i++) tabs[i].classList.remove('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name==='expenses') renderMyExpenses();
+}
 
 // ── Screen helpers ───────────────────────────────────────
 function showScreen(id) {
@@ -433,6 +584,14 @@ function checkHrAdmin() {
   });
 }
 
+function checkAccMgr() {
+  return gPost('/me/checkMemberObjects', { ids: [CFG.accGroupId] }).then(function(d) {
+    gIsAccMgr = d.value && d.value.indexOf(CFG.accGroupId) >= 0;
+  }).catch(function() {
+    gIsAccMgr = false;
+  });
+}
+
 function tryParse(s, def) { try{ return JSON.parse(s||''); }catch(e){ return def; } }
 
 function getSiteId() {
@@ -506,8 +665,19 @@ function bootstrap() {
   })
   .then(function(id) {
     gCLId = id;
+    return getListId(gSiteId, CFG.listExpenses);
+  })
+  .then(function(id) {
+    gELId = id;
+    return getListId(gSiteId, CFG.listMileage);
+  })
+  .then(function(id) {
+    gMLId = id;
     setLoading('Checking permissions…');
     return checkHrAdmin();
+  })
+  .then(function() {
+    return checkAccMgr();
   })
   .then(function() {
     setLoading('Loading users…');
@@ -521,13 +691,22 @@ function bootstrap() {
     return fetchComps();
   })
   .then(function() {
+    return fetchExpenses();
+  })
+  .then(function() {
+    return fetchMileage();
+  })
+  .then(function() {
     document.getElementById('uname').textContent = gUser.name;
     document.getElementById('uav').textContent   = gUser.ini;
     document.getElementById('sobtn').onclick      = doSignOut;
     showScreen('portal');
     applyHrAccess();
+    applyAccAccess();
     renderMy();
     renderManage();
+    renderMyExpenses();
+    renderAccMgrTable();
   })
   .catch(function(e) {
     showFatalError(e.message || String(e));
@@ -791,6 +970,390 @@ function showToast(msg, isErr) {
 function applyHrAccess() {
   var section = document.getElementById('hr-admin-section');
   if (section) section.style.display = gIsHrAdmin ? '' : 'none';
+}
+
+function applyAccAccess() {
+  var section = document.getElementById('acc-admin-section');
+  if (section) section.style.display = gIsAccMgr ? '' : 'none';
+}
+
+// ── Expenses: fetch ──────────────────────────────────────
+function fetchExpenses() {
+  return gGet('/sites/'+gSiteId+'/lists/'+gELId+'/items?$expand=fields&$top=500').then(function(d) {
+    gExpenses = d.value.map(function(i) {
+      var f = i.fields;
+      return {
+        id:         i.id,
+        title:      f.Title || '',
+        date:       (f.expense_date || f.date_of_expense || '').split('T')[0],
+        client:     f.client_number || '',
+        project:    f.project_number || '',
+        amount:     parseFloat(f.amount) || 0,
+        amountExVat:parseFloat(f.amount_exVAT) || 0,
+        amountVat:  parseFloat(f.amount_VAT) || 0,
+        incVat:     !!f.inc_VAT,
+        vatRate:    parseFloat(f.VAT_rate) || 0,
+        processed:  !!f.is_processed,
+        person:     (f.person || '').toLowerCase()
+      };
+    });
+  });
+}
+
+function fetchMileage() {
+  return gGet('/sites/'+gSiteId+'/lists/'+gMLId+'/items?$expand=fields&$top=500').then(function(d) {
+    gMileage = d.value.map(function(i) {
+      var f = i.fields;
+      return {
+        id:       i.id,
+        title:    f.Title || '',
+        date:     (f.travel_date || '').split('T')[0],
+        client:   f.client_number || '',
+        project:  f.project_number || '',
+        distance: parseFloat(f.distance) || 0,
+        rate:     parseFloat(f.rate) || 0.45,
+        person:   (f.person || '').toLowerCase()
+      };
+    });
+  });
+}
+
+// ── Expenses: UI helpers ─────────────────────────────────
+function setExpType(type) {
+  gExpType = type;
+  document.getElementById('exp-std-form').style.display = type==='standard' ? '' : 'none';
+  document.getElementById('exp-mil-form').style.display = type==='mileage'  ? '' : 'none';
+  var stdBtn = document.getElementById('exp-type-std');
+  var milBtn = document.getElementById('exp-type-mil');
+  stdBtn.style.background = type==='standard' ? 'var(--or)' : 'transparent';
+  stdBtn.style.color      = type==='standard' ? 'var(--w)'  : 'var(--or)';
+  milBtn.style.background = type==='mileage'  ? 'var(--or)' : 'transparent';
+  milBtn.style.color      = type==='mileage'  ? 'var(--w)'  : 'var(--or)';
+}
+
+function toggleVatRate() {
+  var has = document.getElementById('es-hasvat').checked;
+  document.getElementById('es-vatrate-wrap').style.display = has ? '' : 'none';
+  recalcVat();
+}
+
+function recalcVat() {
+  var amtStr = document.getElementById('es-amount').value;
+  var amt = parseFloat(amtStr) || 0;
+  var has = document.getElementById('es-hasvat').checked;
+  var rate = parseFloat(document.getElementById('es-vatrate').value) || 20;
+  var prev = document.getElementById('es-vat-preview');
+  if (!amt || !has) { prev.textContent = ''; return; }
+  var exVat = amt / (1 + rate/100);
+  var vatAmt = amt - exVat;
+  prev.textContent = 'Ex-VAT: £'+exVat.toFixed(2)+'  |  VAT ('+rate+'%): £'+vatAmt.toFixed(2);
+}
+
+function recalcMileage() {
+  var dist = parseFloat(document.getElementById('em-distance').value) || 0;
+  var rate = parseFloat(document.getElementById('em-rate').value) || 0.45;
+  var prev = document.getElementById('em-preview');
+  if (!dist) { prev.textContent = ''; return; }
+  prev.textContent = 'Total: £'+(dist*rate).toFixed(2);
+}
+
+function expShowToast(msg, isErr) {
+  var el=document.getElementById('exp-toast'), tx=document.getElementById('exp-toasttxt');
+  tx.textContent=msg; el.classList.toggle('err',!!isErr); el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 4000);
+}
+
+// ── Expenses: add standard ────────────────────────────────
+function addStdExpense() {
+  var client  = document.getElementById('es-client').value.trim();
+  var project = document.getElementById('es-project').value.trim();
+  var date    = document.getElementById('es-date').value;
+  var title   = document.getElementById('es-title').value.trim();
+  var amtStr  = document.getElementById('es-amount').value.trim();
+  var hasVat  = document.getElementById('es-hasvat').checked;
+  var vatRate = parseFloat(document.getElementById('es-vatrate').value) || 20;
+  var receipt = document.getElementById('es-receipt').files[0];
+
+  if (!client)  { alert('Please enter a client number.'); return; }
+  if (!project) { alert('Please enter a project number.'); return; }
+  if (!date)    { alert('Please select a date.'); return; }
+  if (!title)   { alert('Please enter a description.'); return; }
+  var amt = parseFloat(amtStr);
+  if (isNaN(amt) || amt <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!receipt) { alert('Please attach a receipt (PDF or image).'); return; }
+
+  var exVat  = hasVat ? amt / (1 + vatRate/100) : amt;
+  var vatAmt = hasVat ? amt - exVat : 0;
+
+  var btn = document.getElementById('es-addbtn');
+  btn.disabled=true; btn.innerHTML='<span class="isp"></span> Saving…';
+
+  // Step 1: create the list item
+  gPost('/sites/'+gSiteId+'/lists/'+gELId+'/items', {
+    fields: {
+      Title:          title,
+      expense_date:   date,
+      client_number:  client,
+      project_number: project,
+      amount:         amt.toFixed(2),
+      inc_VAT:        hasVat,
+      VAT_rate:       hasVat ? vatRate.toFixed(2) : '0',
+      amount_exVAT:   exVat.toFixed(2),
+      amount_VAT:     vatAmt.toFixed(2),
+      is_processed:   false,
+      person:         gUser.email
+    }
+  }).then(function(r) {
+    // Step 2: upload attachment via SharePoint REST (Graph doesn't support list item attachments)
+    return getToken().then(function(tok) {
+      var siteHost  = CFG.tenant+'.sharepoint.com';
+      var sitePath  = CFG.siteUrl.replace('https://'+siteHost,'');
+      var attachUrl = 'https://'+siteHost+sitePath
+        +'/_api/web/lists/getbytitle(\''+CFG.listExpenses+'\')/items('+r.id+')/AttachmentFiles/add(FileName=\''+encodeURIComponent(receipt.name)+'\')';
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          fetch(attachUrl, {
+            method: 'POST',
+            headers: { Authorization:'Bearer '+tok, Accept:'application/json;odata=verbose' },
+            body: e.target.result
+          }).then(function(res) {
+            if (!res.ok) res.text().then(function(t){ reject(new Error('Attachment upload failed: '+t)); });
+            else resolve(r);
+          }).catch(reject);
+        };
+        reader.onerror = function(){ reject(new Error('Failed to read receipt file.')); };
+        reader.readAsArrayBuffer(receipt);
+      });
+    }).then(function() { return r; });
+  }).then(function(r) {
+    gExpenses.push({
+      id: r.id, title: title, date: date, client: client, project: project,
+      amount: amt, amountExVat: exVat, amountVat: vatAmt,
+      incVat: hasVat, vatRate: vatRate, processed: false, person: gUser.email
+    });
+    // Reset form
+    document.getElementById('es-client').value  = '';
+    document.getElementById('es-project').value = '';
+    document.getElementById('es-date').value    = '';
+    document.getElementById('es-title').value   = '';
+    document.getElementById('es-amount').value  = '';
+    document.getElementById('es-hasvat').checked = false;
+    document.getElementById('es-vatrate').value = '20';
+    document.getElementById('es-vatrate-wrap').style.display = 'none';
+    document.getElementById('es-vat-preview').textContent = '';
+    document.getElementById('es-receipt').value = '';
+    renderMyExpenses();
+    renderAccMgrTable();
+    expShowToast('Expense logged successfully!');
+  }).catch(function(e) {
+    expShowToast('Error: '+e.message, true);
+  }).then(function() {
+    btn.disabled=false; btn.textContent='Log expense';
+  });
+}
+
+// ── Expenses: add mileage ─────────────────────────────────
+function addMilExpense() {
+  var client   = document.getElementById('em-client').value.trim();
+  var project  = document.getElementById('em-project').value.trim();
+  var date     = document.getElementById('em-date').value;
+  var title    = document.getElementById('em-title').value.trim();
+  var distStr  = document.getElementById('em-distance').value.trim();
+  var rateStr  = document.getElementById('em-rate').value.trim();
+
+  if (!client)  { alert('Please enter a client number.'); return; }
+  if (!project) { alert('Please enter a project number.'); return; }
+  if (!date)    { alert('Please select a date.'); return; }
+  if (!title)   { alert('Please enter a purpose.'); return; }
+  var dist = parseFloat(distStr);
+  var rate = parseFloat(rateStr) || 0.45;
+  if (isNaN(dist) || dist <= 0) { alert('Please enter a valid distance.'); return; }
+
+  var btn = document.getElementById('em-addbtn');
+  btn.disabled=true; btn.innerHTML='<span class="isp"></span> Saving…';
+
+  gPost('/sites/'+gSiteId+'/lists/'+gMLId+'/items', {
+    fields: {
+      Title:          title,
+      travel_date:    date,
+      client_number:  client,
+      project_number: project,
+      distance:       dist.toString(),
+      rate:           rate.toFixed(4),
+      person:         gUser.email
+    }
+  }).then(function(r) {
+    gMileage.push({ id:r.id, title:title, date:date, client:client, project:project, distance:dist, rate:rate, person:gUser.email });
+    document.getElementById('em-client').value   = '';
+    document.getElementById('em-project').value  = '';
+    document.getElementById('em-date').value     = '';
+    document.getElementById('em-title').value    = '';
+    document.getElementById('em-distance').value = '';
+    document.getElementById('em-rate').value     = '0.45';
+    document.getElementById('em-preview').textContent = '';
+    renderMyExpenses();
+    renderAccMgrTable();
+    expShowToast('Mileage logged successfully!');
+  }).catch(function(e) {
+    expShowToast('Error: '+e.message, true);
+  }).then(function() {
+    btn.disabled=false; btn.textContent='Log mileage';
+  });
+}
+
+// ── Expenses: render my list ─────────────────────────────
+function renderMyExpenses() {
+  var email = gUser ? gUser.email : '';
+  var myStd = gExpenses.filter(function(e){ return e.person===email; });
+  var myMil = gMileage.filter(function(m){ return m.person===email; });
+
+  // Merge and sort by date desc
+  var all = [];
+  myStd.forEach(function(e){ all.push({ type:'standard', rec:e, date:e.date }); });
+  myMil.forEach(function(m){ all.push({ type:'mileage',  rec:m, date:m.date }); });
+  all.sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  var el = document.getElementById('my-expenses-list');
+  if (!all.length) { el.innerHTML='<div class="empty">No expenses logged yet.</div>'; return; }
+
+  el.innerHTML = all.map(function(item) {
+    var r = item.rec;
+    if (item.type==='standard') {
+      var total = '£'+r.amount.toFixed(2);
+      var detail = r.incVat
+        ? '<span class="badge bgy" style="font-size:10px">Inc. VAT '+r.vatRate+'%</span> Ex-VAT: £'+r.amountExVat.toFixed(2)+' | VAT: £'+r.amountVat.toFixed(2)
+        : '<span class="badge bgy" style="font-size:10px">No VAT</span>';
+      var statusBadge = r.processed
+        ? '<span class="badge bgr">&#10003; Processed</span>'
+        : '<span class="badge bor">Pending</span>';
+      return '<div class="tc">'
+        +'<div class="ttop">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div class="tn">'+escHtml(r.title)+'</div>'
+        +'<div class="tmeta">'
+        +'<span class="badge bbl">Standard</span>'
+        +statusBadge
+        +'<span style="font-size:11.5px;color:var(--g400)">'+fmt(r.date)+'</span>'
+        +'<span style="font-size:11.5px;color:var(--g600)">Client: '+escHtml(r.client)+' | Project: '+escHtml(r.project)+'</span>'
+        +'</div>'
+        +'<div class="tdesc">'+detail+'</div>'
+        +'</div>'
+        +'<div style="font-size:16px;font-weight:600;color:var(--or);white-space:nowrap">'+total+'</div>'
+        +'</div>'
+        +'</div>';
+    } else {
+      var tot = r.distance * r.rate;
+      return '<div class="tc">'
+        +'<div class="ttop">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div class="tn">'+escHtml(r.title)+'</div>'
+        +'<div class="tmeta">'
+        +'<span class="badge bbl">Mileage</span>'
+        +'<span style="font-size:11.5px;color:var(--g400)">'+fmt(r.date)+'</span>'
+        +'<span style="font-size:11.5px;color:var(--g600)">Client: '+escHtml(r.client)+' | Project: '+escHtml(r.project)+'</span>'
+        +'</div>'
+        +'<div class="tdesc">'+r.distance+' miles @ £'+r.rate.toFixed(4)+'/mi</div>'
+        +'</div>'
+        +'<div style="font-size:16px;font-weight:600;color:var(--or);white-space:nowrap">£'+tot.toFixed(2)+'</div>'
+        +'</div>'
+        +'</div>';
+    }
+  }).join('');
+}
+
+// ── Expenses: accounts manager table ─────────────────────
+function setAccFilter(f) {
+  gAccFilter = f;
+  renderAccMgrTable();
+}
+
+function toggleAllExpenses() {
+  gShowAllExp = !gShowAllExp;
+  renderAccMgrTable();
+}
+
+function renderAccMgrTable() {
+  if (!gIsAccMgr) return;
+
+  // Build combined list
+  var all = [];
+  gExpenses.forEach(function(e) { all.push({ type:'standard', rec:e, date:e.date }); });
+  gMileage.forEach(function(m)  { all.push({ type:'mileage',  rec:m, date:m.date }); });
+  all.sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  // Overview badges
+  var totalStd = gExpenses.length;
+  var totalMil = gMileage.length;
+  var unprocessed = gExpenses.filter(function(e){ return !e.processed; }).length;
+  var ov = document.getElementById('acc-overview');
+  if (ov) ov.innerHTML =
+    '<span class="badge bgy" style="margin-right:6px">'+totalStd+' standard</span>'+
+    '<span class="badge bbl" style="margin-right:6px">'+totalMil+' mileage</span>'+
+    '<span class="badge bor">'+unprocessed+' unprocessed</span>';
+
+  // Apply filter
+  var filtered = all.filter(function(item) {
+    if (gAccFilter==='standard')   return item.type==='standard';
+    if (gAccFilter==='mileage')    return item.type==='mileage';
+    if (gAccFilter==='unprocessed') return item.type==='standard' && !item.rec.processed;
+    return true;
+  });
+
+  var tb  = document.getElementById('acc-tbody');
+  var saw = document.getElementById('acc-show-all-wrap');
+
+  if (!filtered.length) {
+    tb.innerHTML = '<tr><td colspan="10" class="empty">No expenses found.</td></tr>';
+    if (saw) saw.style.display='none';
+    return;
+  }
+
+  var limit = gShowAllExp ? filtered.length : Math.min(10, filtered.length);
+  tb.innerHTML = filtered.slice(0, limit).map(function(item) {
+    var r = item.rec;
+    var personName = escHtml(nameByEmail(r.person) || r.person);
+
+    if (item.type==='standard') {
+      var status = r.processed
+        ? '<span class="badge bgr" style="font-size:10px">Processed</span>'
+        : '<span class="badge bor" style="font-size:10px">Pending</span>';
+      var exVat = r.incVat ? '£'+r.amountExVat.toFixed(2) : '—';
+      var vat   = r.incVat ? '£'+r.amountVat.toFixed(2)   : '—';
+      return '<tr>'
+        +'<td title="'+personName+'">'+personName+'</td>'
+        +'<td title="'+escHtml(r.title)+'">'+escHtml(r.title)+'</td>'
+        +'<td>'+escHtml(r.client)+'</td>'
+        +'<td>'+escHtml(r.project)+'</td>'
+        +'<td>'+fmt(r.date)+'</td>'
+        +'<td><span class="badge bbl" style="font-size:10px">Standard</span></td>'
+        +'<td style="font-weight:600;color:var(--or)">£'+r.amount.toFixed(2)+'</td>'
+        +'<td>'+exVat+'</td>'
+        +'<td>'+vat+'</td>'
+        +'<td>'+status+'</td>'
+        +'</tr>';
+    } else {
+      var tot = r.distance * r.rate;
+      return '<tr>'
+        +'<td title="'+personName+'">'+personName+'</td>'
+        +'<td title="'+escHtml(r.title)+'">'+escHtml(r.title)+' ('+r.distance+'mi)</td>'
+        +'<td>'+escHtml(r.client)+'</td>'
+        +'<td>'+escHtml(r.project)+'</td>'
+        +'<td>'+fmt(r.date)+'</td>'
+        +'<td><span class="badge bgy" style="font-size:10px">Mileage</span></td>'
+        +'<td style="font-weight:600;color:var(--or)">£'+tot.toFixed(2)+'</td>'
+        +'<td>—</td>'
+        +'<td>—</td>'
+        +'<td><span class="badge bgr" style="font-size:10px">N/A</span></td>'
+        +'</tr>';
+    }
+  }).join('');
+
+  if (saw) {
+    saw.style.display = filtered.length > 10 ? '' : 'none';
+    var sawBtn = saw.querySelector('button');
+    if (sawBtn) sawBtn.textContent = gShowAllExp ? 'Hide expenses' : 'Show all expenses';
+  }
 }
 
 // ── STARTUP ──────────────────────────────────────────────
