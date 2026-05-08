@@ -391,9 +391,9 @@ function populateUserDropdown() {
     return;
   }
   list.innerHTML = gUsers.map(function(u) {
-    var safeEmail = u.email.replace(/"/g,'&quot;');
-    var safeName  = u.name.replace(/</g,'&lt;');
-    return '<label class="assignee-item" id="ai-'+safeEmail+'">'
+    var safeEmail = escHtml(u.email);
+    var safeName  = escHtml(u.name);
+    return '<label class="assignee-item">'
       + '<input type="checkbox" value="'+safeEmail+'" onchange="onAssigneeChange(this)">'
       + '<div><div class="aname">'+safeName+'</div><div class="aemail">'+safeEmail+'</div></div>'
       + '</label>';
@@ -430,9 +430,6 @@ function checkHrAdmin() {
     gIsHrAdmin = d.value && d.value.indexOf(CFG.hrGroupId) >= 0;
   }).catch(function() {
     gIsHrAdmin = false;
-  }).then(function() {
-    // DEBUG: force HR admin view for bob@bangcreations.co.uk
-    if (gUser && gUser.email === 'bob@bangcreations.co.uk') gIsHrAdmin = true;
   });
 }
 
@@ -543,6 +540,8 @@ function today() { return new Date().toISOString().split('T')[0]; }
 function fmt(d)  { if(!d) return '—'; var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function ini(n)  { return n.split(' ').map(function(p){return p[0];}).join(''); }
 function cleanName(n) { return (n||'').split(' | ')[0].trim(); }
+function escHtml(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function safeUrl(u)  { return /^https?:\/\//i.test(u) ? u : '#'; }
 
 // Look up display name by email
 function nameByEmail(email) {
@@ -603,23 +602,23 @@ function renderMy() {
     var d  = isComp(t.id, email);
     var lk = t.links.length
       ? '<div class="tlinks">'+t.links.map(function(l){
-          return '<a href="'+l+'" target="_blank">&#128279; '+l.replace(/^https?:\/\//,'').split('/')[0]+'</a>';
+          var u = safeUrl(l);
+          return '<a href="'+escHtml(u)+'" target="_blank" rel="noopener noreferrer">&#128279; '+escHtml(l.replace(/^https?:\/\//,'').split('/')[0])+'</a>';
         }).join('')+'</div>'
       : '';
-    var safeEmail = email.replace(/'/g,"\\'");
     return '<div class="tc'+(d?' done':'')+'">'+
       '<div class="ttop">'+
         '<div style="flex:1;min-width:0">'+
-          '<div class="tn'+(d?' struck':'')+'">'+t.title+'</div>'+
+          '<div class="tn'+(d?' struck':'')+'">'+escHtml(t.title)+'</div>'+
           '<div class="tmeta">'+
             dueBadge(t,email)+
-            '<span class="badge bbl">'+t.cat+'</span>'+
+            '<span class="badge bbl">'+escHtml(t.cat)+'</span>'+
             '<span style="font-size:11.5px;color:var(--g400)">Due '+fmt(t.due)+'</span>'+
           '</div>'+
-          '<div class="tdesc">'+t.desc+'</div>'+
+          '<div class="tdesc">'+escHtml(t.desc)+'</div>'+
           lk+
         '</div>'+
-        '<button class="cbtn'+(d?' dn':'')+'" id="cb-'+t.id+'" onclick="toggleComp(\''+t.id+'\',\''+safeEmail+'\')">'+(d?'&#10003; Done':'Mark done')+'</button>'+
+        '<button class="cbtn'+(d?' dn':'')+'" id="cb-'+t.id+'" data-tid="'+t.id+'" data-email="'+escHtml(email)+'" onclick="toggleComp(this.dataset.tid,this.dataset.email)">'+(d?'&#10003; Done':'Mark done')+'</button>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -654,15 +653,15 @@ function renderManage() {
     var names = t.assignees.map(function(e){
       var n  = cleanName(nameByEmail(e));
       var cl = isComp(t.id,e) ? 'bgr' : isOver(t,e) ? 'bre' : 'bgy';
-      return '<span class="badge '+cl+'" style="font-size:10px">'+n+'</span>';
+      return '<span class="badge '+cl+'" style="font-size:10px">'+escHtml(n)+'</span>';
     }).join(' ');
     return '<tr>'+
-      '<td title="'+t.title+'" style="font-weight:500">'+t.title+'</td>'+
+      '<td title="'+escHtml(t.title)+'" style="font-weight:500">'+escHtml(t.title)+'</td>'+
       '<td><div style="display:flex;flex-wrap:wrap;gap:3px">'+names+'</div></td>'+
       '<td>'+fmt(t.due)+'</td>'+
-      '<td><span class="badge bbl" style="font-size:10px">'+t.cat+'</span></td>'+
+      '<td><span class="badge bbl" style="font-size:10px">'+escHtml(t.cat)+'</span></td>'+
       '<td style="color:var(--g600)">'+dc+'/'+t.assignees.length+' done</td>'+
-      '<td><button class="dbtn" id="db-'+t.id+'" onclick="delTask(\''+t.id+'\')">Delete</button></td>'+
+      '<td><button class="dbtn" id="db-'+t.id+'" data-tid="'+t.id+'" onclick="delTask(this.dataset.tid)">Delete</button></td>'+
     '</tr>';
   });
 
@@ -807,7 +806,7 @@ msalScript.onload = function() {
       authority:   'https://login.microsoftonline.com/'+CFG.tenantId,
       redirectUri: window.location.origin+window.location.pathname
     },
-    cache:{ cacheLocation:'sessionStorage', storeAuthStateInCookie:false }
+    cache:{ cacheLocation:'memory', storeAuthStateInCookie:true }
   };
   gMsal = new msal.PublicClientApplication(msalCfg);
 
@@ -824,9 +823,15 @@ msalScript.onload = function() {
     if (accts.length > 0) {
       gMsal.setActiveAccount(accts[0]);
       bootstrap();
-    } else {
-      showScreen('s-signin');
+      return;
     }
+    // Memory cache loses accounts on page refresh — attempt silent SSO before showing sign-in
+    return gMsal.ssoSilent({ scopes: SCOPES }).then(function(r) {
+      gMsal.setActiveAccount(r.account);
+      bootstrap();
+    }).catch(function() {
+      showScreen('s-signin');
+    });
   }).catch(function(e) {
     showFatalError('Initialisation error: '+(e.message||String(e)));
   });
