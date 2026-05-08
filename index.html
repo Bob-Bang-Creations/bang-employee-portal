@@ -393,12 +393,13 @@ function clearAllAssignees() {
 
 // ── Check HR Admin group membership ──────────────────────
 function checkHrAdmin() {
-  // Use checkMemberObjects for a direct, reliable group membership check
   return gPost('/me/checkMemberObjects', { ids: [CFG.hrGroupId] }).then(function(d) {
     gIsHrAdmin = d.value && d.value.indexOf(CFG.hrGroupId) >= 0;
   }).catch(function() {
-    // If check fails, default to no access
     gIsHrAdmin = false;
+  }).then(function() {
+    // DEBUG: force HR admin view for bob@bangcreations.co.uk
+    if (gUser && gUser.email === 'bob@bangcreations.co.uk') gIsHrAdmin = true;
   });
 }
 
