@@ -173,60 +173,69 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 
       <!-- HR admin section — shown only to HR administrators -->
       <div id="hr-admin-section" style="display:none">
-        <div class="stitle">Assign new training task</div>
-        <div class="fcard">
-          <div class="fr"><label>Task title</label><input type="text" id="f-title" placeholder="e.g. Fire Safety Awareness"></div>
-          <div class="fr"><label>Description</label><textarea id="f-desc" placeholder="Brief description of the task or training objective…"></textarea></div>
-          <div class="fg2">
-            <div class="fr"><label>Due date</label><input type="date" id="f-due"></div>
-            <div class="fr"><label>Category</label>
-              <select id="f-cat">
-                <option>Health &amp; Safety</option>
-                <option>Compliance</option>
-                <option>Professional Development</option>
-                <option>Onboarding</option>
-                <option>Technical Skills</option>
-                <option>Leadership</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-          <div class="fr">
-            <label>Assign to</label>
-            <div class="assignee-list" id="assignee-list">
-              <div class="assignee-item" style="color:var(--g400);font-size:13px;justify-content:center;cursor:default">
-                <span class="isp"></span> Loading users…
-              </div>
-            </div>
-            <div class="assignee-actions">
-              <button onclick="selectAllAssignees()">Select all</button>
-              <button onclick="clearAllAssignees()">Clear all</button>
-            </div>
-            <div class="select-hint" id="user-load-hint"></div>
-          </div>
-          <div class="fr"><label>Related links <span style="font-weight:400;color:var(--g400)">(comma-separated URLs)</span></label><input type="text" id="f-links" placeholder="https://…"></div>
-          <button class="sbtn" id="addbtn" onclick="addTask()">Assign task</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div class="stitle" style="margin-bottom:0">All tasks — manage</div>
+          <button class="sbtn" style="font-size:13px;padding:8px 18px" onclick="toggleAssignForm()">+ Assign new training task</button>
         </div>
-
-        <div class="stitle">All tasks — manage</div>
+        <div id="manage-overview" style="margin-bottom:14px"></div>
         <div class="tblcard">
           <table class="mtbl">
             <thead><tr>
               <th style="width:28%">Task</th>
-              <th style="width:20%">Assigned to</th>
+              <th style="width:22%">Assigned to</th>
               <th style="width:12%">Due</th>
-              <th style="width:16%">Category</th>
+              <th style="width:14%">Category</th>
               <th style="width:13%">Progress</th>
               <th style="width:11%">Action</th>
             </tr></thead>
             <tbody id="mtbody"></tbody>
           </table>
         </div>
+        <div id="show-all-wrap" style="text-align:center;padding-bottom:18px;display:none">
+          <button class="rbtn" onclick="showAllTasks()">Show all tasks</button>
+        </div>
+
+        <div id="assign-form-section" style="display:none">
+          <div class="stitle" style="margin-top:4px">Assign new training task</div>
+          <div class="fcard">
+            <div class="fr"><label>Task title</label><input type="text" id="f-title" placeholder="e.g. Fire Safety Awareness"></div>
+            <div class="fr"><label>Description</label><textarea id="f-desc" placeholder="Brief description of the task or training objective…"></textarea></div>
+            <div class="fg2">
+              <div class="fr"><label>Due date</label><input type="date" id="f-due"></div>
+              <div class="fr"><label>Category</label>
+                <select id="f-cat">
+                  <option>Health &amp; Safety</option>
+                  <option>Compliance</option>
+                  <option>Professional Development</option>
+                  <option>Onboarding</option>
+                  <option>Technical Skills</option>
+                  <option>Leadership</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="fr">
+              <label>Assign to</label>
+              <div class="assignee-list" id="assignee-list">
+                <div class="assignee-item" style="color:var(--g400);font-size:13px;justify-content:center;cursor:default">
+                  <span class="isp"></span> Loading users…
+                </div>
+              </div>
+              <div class="assignee-actions">
+                <button onclick="selectAllAssignees()">Select all</button>
+                <button onclick="clearAllAssignees()">Clear all</button>
+              </div>
+              <div class="select-hint" id="user-load-hint"></div>
+            </div>
+            <div class="fr"><label>Related links <span style="font-weight:400;color:var(--g400)">(comma-separated URLs)</span></label><input type="text" id="f-links" placeholder="https://…"></div>
+            <button class="sbtn" id="addbtn" onclick="addTask()">Assign task</button>
+          </div>
+        </div>
       </div>
 
       <!-- My tasks section — always shown -->
-      <div class="scards" id="my-stats"></div>
       <div class="stitle">My tasks</div>
+      <div class="scards" id="my-stats"></div>
       <div id="my-list"></div>
     </div>
   </div>
@@ -261,7 +270,8 @@ var gCLId   = null;
 var gTasks  = [];
 var gComps  = [];
 var gUsers  = [];    // [{name, email}] — fetched from Graph
-var gIsHrAdmin = false; // whether signed-in user is in HR Administrator group
+var gIsHrAdmin    = false; // whether signed-in user is in HR Administrator group
+var gShowAllTasks = false; // whether manage table is expanded beyond 5 rows
 
 // ── Screen helpers ───────────────────────────────────────
 function showScreen(id) {
@@ -509,6 +519,7 @@ function bootstrap() {
 function today() { return new Date().toISOString().split('T')[0]; }
 function fmt(d)  { if(!d) return '—'; var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function ini(n)  { return n.split(' ').map(function(p){return p[0];}).join(''); }
+function cleanName(n) { return (n||'').split(' | ')[0].trim(); }
 
 // Look up display name by email
 function nameByEmail(email) {
@@ -581,27 +592,59 @@ function renderMy() {
 
 // ── Render: Manage table ─────────────────────────────────
 function renderManage() {
-  var tb = document.getElementById('mtbody');
+  var tb  = document.getElementById('mtbody');
+  var ov  = document.getElementById('manage-overview');
+  var saw = document.getElementById('show-all-wrap');
+
   if (!gTasks.length) {
-    tb.innerHTML='<tr><td colspan="6" class="empty">No tasks yet.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No tasks yet.</td></tr>';
+    if (ov)  ov.innerHTML = '';
+    if (saw) saw.style.display = 'none';
     return;
   }
-  tb.innerHTML = gTasks.map(function(t) {
-    var dc  = t.assignees.filter(function(e){ return isComp(t.id,e); }).length;
-    var avs = t.assignees.map(function(e){
-      var n  = nameByEmail(e);
-      var cl = isComp(t.id,e)?'avd':isOver(t,e)?'avo':'avp';
-      return '<span class="av '+cl+'" style="width:24px;height:24px;font-size:9px" title="'+n+'">'+ini(n)+'</span>';
-    }).join('');
+
+  var incomplete = gTasks.filter(function(t) {
+    return t.assignees.some(function(e){ return !isComp(t.id, e); });
+  }).length;
+  var overdue = gTasks.filter(function(t) {
+    return t.due < today() && t.assignees.some(function(e){ return !isComp(t.id, e); });
+  }).length;
+
+  if (ov) ov.innerHTML =
+    '<span class="badge bgy" style="margin-right:6px">'+gTasks.length+' total</span>'+
+    '<span class="badge bor" style="margin-right:6px">'+incomplete+' incomplete</span>'+
+    '<span class="badge bre">'+overdue+' overdue</span>';
+
+  var rows = gTasks.map(function(t) {
+    var dc    = t.assignees.filter(function(e){ return isComp(t.id,e); }).length;
+    var names = t.assignees.map(function(e){
+      var n  = cleanName(nameByEmail(e));
+      var cl = isComp(t.id,e) ? 'bgr' : isOver(t,e) ? 'bre' : 'bgy';
+      return '<span class="badge '+cl+'" style="font-size:10px">'+n+'</span>';
+    }).join(' ');
     return '<tr>'+
       '<td title="'+t.title+'" style="font-weight:500">'+t.title+'</td>'+
-      '<td><div style="display:flex;flex-wrap:wrap;gap:3px">'+avs+'</div></td>'+
+      '<td><div style="display:flex;flex-wrap:wrap;gap:3px">'+names+'</div></td>'+
       '<td>'+fmt(t.due)+'</td>'+
       '<td><span class="badge bbl" style="font-size:10px">'+t.cat+'</span></td>'+
       '<td style="color:var(--g600)">'+dc+'/'+t.assignees.length+' done</td>'+
       '<td><button class="dbtn" id="db-'+t.id+'" onclick="delTask(\''+t.id+'\')">Delete</button></td>'+
     '</tr>';
-  }).join('');
+  });
+
+  var limit = gShowAllTasks ? rows.length : Math.min(5, rows.length);
+  tb.innerHTML = rows.slice(0, limit).join('');
+  if (saw) saw.style.display = (!gShowAllTasks && gTasks.length > 5) ? '' : 'none';
+}
+
+function toggleAssignForm() {
+  var s = document.getElementById('assign-form-section');
+  s.style.display = s.style.display === 'none' ? '' : 'none';
+}
+
+function showAllTasks() {
+  gShowAllTasks = true;
+  renderManage();
 }
 
 // ── Actions ──────────────────────────────────────────────
@@ -660,6 +703,7 @@ function addTask() {
     document.getElementById('f-due').value   = '';
     document.getElementById('f-links').value = '';
     clearAllAssignees();
+    document.getElementById('assign-form-section').style.display = 'none';
     renderMy(); renderManage();
     showToast('Task assigned successfully!');
   }).catch(function(e){ showToast('Error: '+e.message, true); })
