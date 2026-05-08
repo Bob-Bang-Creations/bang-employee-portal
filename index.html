@@ -335,6 +335,12 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
         </div>
       </div>
 
+      <!-- Debug: temporary access diagnostic — remove once resolved -->
+      <div id="acc-debug-wrap" style="margin-bottom:16px">
+        <button class="rbtn" style="font-size:11px;padding:4px 14px" onclick="runAccDebug()">🔍 Debug: check my Accounts Manager access</button>
+        <pre id="acc-debug-out" style="display:none;margin-top:10px;font-size:11px;background:var(--g50);border:1px solid var(--g200);border-radius:var(--rsm);padding:12px;white-space:pre-wrap;word-break:break-all;color:var(--g900)"></pre>
+      </div>
+
       <!-- My logged expenses -->
       <div class="my-divider">
         <div class="my-divider-line"></div>
@@ -1385,6 +1391,47 @@ function renderAccMgrTable() {
     var sawBtn = saw.querySelector('button');
     if (sawBtn) sawBtn.textContent = gShowAllExp ? 'Hide expenses' : 'Show all expenses';
   }
+}
+
+// ── Accounts Manager debug ───────────────────────────────
+function runAccDebug() {
+  var out = document.getElementById('acc-debug-out');
+  out.style.display = 'block';
+  out.textContent = 'Running checks…\n';
+
+  var log = function(msg) { out.textContent += msg + '\n'; };
+
+  log('gIsAccMgr = ' + gIsAccMgr);
+  log('Target group ID: ' + CFG.accGroupId);
+  log('');
+
+  gPost('/me/checkMemberObjects', { ids: [CFG.accGroupId] })
+  .then(function(d) {
+    log('checkMemberObjects result: ' + JSON.stringify(d.value));
+    return gGet('/me/ownedObjects?$select=id,displayName');
+  })
+  .then(function(o) {
+    var ids = (o.value || []).map(function(x){ return x.id + ' (' + (x.displayName||'no name') + ')'; });
+    log('');
+    log('ownedObjects (' + ids.length + '):');
+    ids.forEach(function(id){ log('  ' + id); });
+    log('');
+    var match = (o.value || []).some(function(x){ return x.id && x.id.toLowerCase() === CFG.accGroupId.toLowerCase(); });
+    log('Owner match found: ' + match);
+    return gGet('/me/memberOf?$select=id,displayName');
+  })
+  .then(function(m) {
+    var ids = (m.value || []).map(function(x){ return x.id + ' (' + (x.displayName||'no name') + ')'; });
+    log('');
+    log('memberOf (' + ids.length + '):');
+    ids.forEach(function(id){ log('  ' + id); });
+    var match = (m.value || []).some(function(x){ return x.id && x.id.toLowerCase() === CFG.accGroupId.toLowerCase(); });
+    log('');
+    log('Member match found: ' + match);
+  })
+  .catch(function(e) {
+    log('ERROR: ' + e.message);
+  });
 }
 
 // ── STARTUP ──────────────────────────────────────────────
