@@ -1123,9 +1123,13 @@ function addStdExpense() {
     }
   }).then(function(r) {
     // Step 2: upload attachment via SharePoint REST (Graph doesn't support list item attachments)
-    return getToken().then(function(tok) {
-      var siteHost  = CFG.tenant+'.sharepoint.com';
-      var sitePath  = CFG.siteUrl.replace('https://'+siteHost,'');
+    // Requires a SharePoint-scoped token, not the Graph token
+    var siteHost = CFG.tenant+'.sharepoint.com';
+    var spScope  = 'https://'+siteHost+'/.default';
+    var acct     = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
+    return gMsal.acquireTokenSilent({ scopes:[spScope], account:acct }).then(function(spRes) {
+      var tok      = spRes.accessToken;
+      var sitePath = CFG.siteUrl.replace('https://'+siteHost,'');
       var attachUrl = 'https://'+siteHost+sitePath
         +'/_api/web/lists/getbytitle(\''+CFG.listExpenses+'\')/items('+r.id+')/AttachmentFiles/add(FileName=\''+encodeURIComponent(receipt.name)+'\')';
       return new Promise(function(resolve, reject) {
@@ -1133,11 +1137,11 @@ function addStdExpense() {
         reader.onload = function(e) {
           fetch(attachUrl, {
             method: 'POST',
-            headers: { Authorization:'Bearer '+tok, Accept:'application/json;odata=verbose' },
+            headers: { Authorization:'Bearer '+tok, Accept:'application/json;odata=verbose', 'Content-Type':'application/octet-stream' },
             body: e.target.result
           }).then(function(res) {
-            if (!res.ok) res.text().then(function(t){ reject(new Error('Attachment upload failed: '+t)); });
-            else resolve(r);
+            if (!res.ok) return res.text().then(function(t){ reject(new Error('Attachment upload failed: '+t)); });
+            resolve(r);
           }).catch(reject);
         };
         reader.onerror = function(){ reject(new Error('Failed to read receipt file.')); };
