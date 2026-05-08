@@ -584,8 +584,17 @@ function checkHrAdmin() {
 }
 
 function checkAccMgr() {
+  // checkMemberObjects only catches direct membership, not ownership.
+  // Fall back to checking /memberOf and /ownedObjects if needed.
   return gPost('/me/checkMemberObjects', { ids: [CFG.accGroupId] }).then(function(d) {
     gIsAccMgr = d.value && d.value.indexOf(CFG.accGroupId) >= 0;
+    if (gIsAccMgr) return;
+    // Not a member — check if they are an owner of the group instead
+    return gGet('/me/ownedObjects?$select=id').then(function(o) {
+      gIsAccMgr = (o.value || []).some(function(obj) {
+        return obj.id && obj.id.toLowerCase() === CFG.accGroupId.toLowerCase();
+      });
+    }).catch(function() { gIsAccMgr = false; });
   }).catch(function() {
     gIsAccMgr = false;
   });
