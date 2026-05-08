@@ -281,8 +281,8 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
       <div id="exp-std-form">
         <div class="fcard">
           <div class="fg2">
-            <div class="fr"><label>Client number</label><input type="text" id="es-client" placeholder="e.g. C-1042"></div>
-            <div class="fr"><label>Project number</label><input type="text" id="es-project" placeholder="e.g. P-2024-07"></div>
+            <div class="fr"><label>Client number</label><input type="text" id="es-client" placeholder="e.g. 0001"></div>
+            <div class="fr"><label>Project number</label><input type="text" id="es-project" placeholder="e.g. 01"></div>
           </div>
           <div class="fg2">
             <div class="fr"><label>Date of expense</label><input type="date" id="es-date"></div>
@@ -294,9 +294,9 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
               <label>VAT</label>
               <div style="display:flex;align-items:center;gap:14px;margin-top:2px">
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--g900);font-weight:400">
-                  <input type="checkbox" id="es-hasvat" onchange="toggleVatRate()" style="width:15px;height:15px;accent-color:var(--or);cursor:pointer"> Includes VAT
+                  <input type="checkbox" id="es-hasvat" onchange="toggleVatRate()" style="width:15px;height:15px;accent-color:var(--or);cursor:pointer" checked> Includes VAT
                 </label>
-                <div id="es-vatrate-wrap" style="display:none;flex:1">
+                <div id="es-vatrate-wrap" style="flex:1">
                   <input type="text" id="es-vatrate" value="20" placeholder="20" style="width:80px;font-family:var(--f);font-size:13px;padding:6px 8px;border-radius:var(--rsm);border:1px solid var(--g200);outline:none" oninput="recalcVat()">
                   <span style="font-size:12px;color:var(--g600);margin-left:4px">%</span>
                 </div>
@@ -316,8 +316,8 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
       <div id="exp-mil-form" style="display:none">
         <div class="fcard">
           <div class="fg2">
-            <div class="fr"><label>Client number</label><input type="text" id="em-client" placeholder="e.g. C-1042"></div>
-            <div class="fr"><label>Project number</label><input type="text" id="em-project" placeholder="e.g. P-2024-07"></div>
+            <div class="fr"><label>Client number</label><input type="text" id="em-client" placeholder="e.g. 0001"></div>
+            <div class="fr"><label>Project number</label><input type="text" id="em-project" placeholder="e.g. 01"></div>
           </div>
           <div class="fg2">
             <div class="fr"><label>Date of travel</label><input type="date" id="em-date"></div>
@@ -331,7 +331,6 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
               <div id="em-preview" style="font-size:12px;color:var(--g600);margin-top:6px"></div>
             </div>
           </div>
-          <div style="font-size:12px;color:var(--g400);margin-bottom:14px">VAT is not applicable for mileage expenses.</div>
           <button class="sbtn" id="em-addbtn" onclick="addMilExpense()">Log mileage</button>
         </div>
       </div>
@@ -1033,20 +1032,39 @@ function setExpType(type) {
 
 function toggleVatRate() {
   var has = document.getElementById('es-hasvat').checked;
-  document.getElementById('es-vatrate-wrap').style.display = has ? '' : 'none';
+  if (!has) {
+    // Unchecked: set rate to 0 to make the 0% state clear
+    document.getElementById('es-vatrate').value = '0';
+  } else {
+    // Re-checked: restore to 20 if currently 0
+    var cur = parseFloat(document.getElementById('es-vatrate').value) || 0;
+    if (cur === 0) document.getElementById('es-vatrate').value = '20';
+  }
   recalcVat();
 }
 
 function recalcVat() {
   var amtStr = document.getElementById('es-amount').value;
-  var amt = parseFloat(amtStr) || 0;
-  var has = document.getElementById('es-hasvat').checked;
-  var rate = parseFloat(document.getElementById('es-vatrate').value) || 20;
-  var prev = document.getElementById('es-vat-preview');
-  if (!amt || !has) { prev.textContent = ''; return; }
-  var exVat = amt / (1 + rate/100);
+  var amt    = parseFloat(amtStr) || 0;
+  var rateEl = document.getElementById('es-vatrate');
+  var cbEl   = document.getElementById('es-hasvat');
+  var rate   = parseFloat(rateEl.value) || 0;
+  var prev   = document.getElementById('es-vat-preview');
+
+  // If rate typed as 0 while checkbox is ticked, auto-untick
+  if (rate === 0 && cbEl.checked) {
+    cbEl.checked = false;
+  }
+  // If rate > 0 while checkbox is unticked, auto-tick
+  if (rate > 0 && !cbEl.checked) {
+    cbEl.checked = true;
+  }
+
+  var has = cbEl.checked;
+  if (!amt || !has || rate === 0) { prev.textContent = ''; return; }
+  var exVat  = amt / (1 + rate / 100);
   var vatAmt = amt - exVat;
-  prev.textContent = 'Ex-VAT: £'+exVat.toFixed(2)+'  |  VAT ('+rate+'%): £'+vatAmt.toFixed(2);
+  prev.textContent = 'Ex-VAT: £' + exVat.toFixed(2) + '  |  VAT (' + rate + '%): £' + vatAmt.toFixed(2);
 }
 
 function recalcMileage() {
