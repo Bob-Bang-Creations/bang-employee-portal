@@ -47,7 +47,7 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 .ca{flex:1}
 .panel{display:none;padding:24px;max-width:960px;margin:0 auto;width:100%}
 .panel.active{display:block}
-.scards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.scards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
 .sc{background:var(--w);border-radius:var(--rlg);padding:16px 18px;text-align:center;box-shadow:var(--ss);border:1px solid var(--g100)}
 .sc .n{font-size:30px;font-weight:600;color:var(--or);line-height:1;letter-spacing:-1px}
 .sc .l{font-size:11px;font-weight:500;color:var(--g400);margin-top:5px;text-transform:uppercase;letter-spacing:.06em}
@@ -179,30 +179,18 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 
       <!-- HR admin section — shown only to HR administrators -->
       <div id="hr-admin-section" class="admin-panel" style="display:none">
-        <div class="stitle" style="margin-bottom:8px">All tasks — manage</div>
-        <div id="manage-overview" style="margin-bottom:14px"></div>
-        <div class="tblcard">
-          <table class="mtbl">
-            <thead><tr>
-              <th style="width:28%">Task</th>
-              <th style="width:22%">Assigned to</th>
-              <th style="width:12%">Due</th>
-              <th style="width:14%">Category</th>
-              <th style="width:13%">Progress</th>
-              <th style="width:11%">Action</th>
-            </tr></thead>
-            <tbody id="mtbody"></tbody>
-          </table>
+        <div class="my-divider" style="margin-top:0">
+          <div class="my-divider-line"></div>
+          <div class="my-divider-label">HR task management</div>
+          <div class="my-divider-line"></div>
         </div>
-        <div id="show-all-wrap" style="text-align:center;margin-bottom:14px;display:none">
-          <button class="rbtn" onclick="showAllTasks()">Show all tasks</button>
-        </div>
-        <div style="text-align:center;margin-bottom:6px">
-          <button class="sbtn" style="font-size:13px;padding:8px 20px" onclick="toggleAssignForm()">+ Assign new training task</button>
+        <div id="manage-overview" style="margin-bottom:12px"></div>
+        <div style="margin-bottom:14px">
+          <button class="sbtn" id="assign-toggle-btn" style="font-size:13px;padding:8px 20px" onclick="toggleAssignForm()">+ Assign new training task</button>
         </div>
 
         <div id="assign-form-section" style="display:none">
-          <div class="stitle" style="margin-top:16px">Assign new training task</div>
+          <div class="stitle" style="margin-bottom:10px">Assign new training task</div>
           <div class="fcard">
             <div class="fr"><label>Task title</label><input type="text" id="f-title" placeholder="e.g. Fire Safety Awareness"></div>
             <div class="fr"><label>Description</label><textarea id="f-desc" placeholder="Brief description of the task or training objective…"></textarea></div>
@@ -237,6 +225,23 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
             <div class="fr"><label>Related links <span style="font-weight:400;color:var(--g400)">(comma-separated URLs)</span></label><input type="text" id="f-links" placeholder="https://…"></div>
             <button class="sbtn" id="addbtn" onclick="addTask()">Assign task</button>
           </div>
+        </div>
+
+        <div class="tblcard">
+          <table class="mtbl">
+            <thead><tr>
+              <th style="width:28%">Task</th>
+              <th style="width:22%">Assigned to</th>
+              <th style="width:12%">Due</th>
+              <th style="width:14%">Category</th>
+              <th style="width:13%">Progress</th>
+              <th style="width:11%">Action</th>
+            </tr></thead>
+            <tbody id="mtbody"></tbody>
+          </table>
+        </div>
+        <div id="show-all-wrap" style="text-align:center;margin-bottom:6px;display:none">
+          <button class="rbtn" onclick="toggleAllTasks()">Show all tasks</button>
         </div>
       </div>
 
@@ -570,7 +575,7 @@ function renderMy() {
   var ov = mt.filter(function(t){ return isOver(t, email); }).length;
 
   document.getElementById('my-stats').innerHTML =
-    sc(mt.length,'Assigned')+sc(dn,'Complete')+sc(mt.length-dn,'Pending')+sc(ov,'Overdue');
+    sc(mt.length-dn,'Pending')+sc(ov,'Overdue')+sc(dn,'Complete');
 
   if (!mt.length) {
     document.getElementById('my-list').innerHTML='<div class="empty">No tasks assigned to you yet.</div>';
@@ -624,8 +629,7 @@ function renderManage() {
   }).length;
 
   if (ov) ov.innerHTML =
-    '<span class="badge bgy" style="margin-right:6px">'+gTasks.length+' total</span>'+
-    '<span class="badge bor" style="margin-right:6px">'+incomplete+' incomplete</span>'+
+    '<span class="badge bgy" style="margin-right:6px">'+incomplete+' incomplete</span>'+
     '<span class="badge bre">'+overdue+' overdue</span>';
 
   var rows = gTasks.map(function(t) {
@@ -647,13 +651,19 @@ function renderManage() {
 
   var limit = gShowAllTasks ? rows.length : Math.min(5, rows.length);
   tb.innerHTML = rows.slice(0, limit).join('');
-  if (saw) saw.style.display = (!gShowAllTasks && gTasks.length > 5) ? '' : 'none';
+  if (saw) {
+    saw.style.display = gTasks.length > 5 ? '' : 'none';
+    var sawBtn = saw.querySelector('button');
+    if (sawBtn) sawBtn.textContent = gShowAllTasks ? 'Hide tasks' : 'Show all tasks';
+  }
 }
 
 function toggleAssignForm() {
   var s = document.getElementById('assign-form-section');
   var opening = s.style.display === 'none';
   s.style.display = opening ? '' : 'none';
+  var btn = document.getElementById('assign-toggle-btn');
+  if (btn) btn.textContent = opening ? '− Assign new training task' : '+ Assign new training task';
   if (opening) {
     var srch = document.getElementById('assignee-search');
     if (srch) { srch.value = ''; filterAssignees(''); }
@@ -670,8 +680,8 @@ function filterAssignees(q) {
   }
 }
 
-function showAllTasks() {
-  gShowAllTasks = true;
+function toggleAllTasks() {
+  gShowAllTasks = !gShowAllTasks;
   renderManage();
 }
 
