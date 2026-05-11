@@ -22,35 +22,61 @@ function fetchHbDrive() {
   });
 }
 
-function fetchHbDocs() {
-  var encoded = encodeURIComponent(CFG.hbFolder);
+// Map a raw Graph driveItem into a handbook doc object.
+function hbMapItem(item) {
+  var fields = (item.listItem && item.listItem.fields) || {};
+  // FileTypeTag is a multi-choice column — Graph may return an array or a
+  // ';#'-delimited string depending on the SharePoint column configuration.
+  var raw  = fields.FileTypeTag;
+  var tags = [];
+  if (Array.isArray(raw)) {
+    tags = raw;
+  } else if (typeof raw === 'string' && raw) {
+    tags = raw.indexOf(';#') >= 0 ? raw.split(';#').filter(Boolean) : [raw];
+  }
+  return {
+    id:      item.id,
+    name:    item.name.replace(/\.html?$/i, ''),
+    tags:    tags,
+    updated: (item.lastModifiedDateTime || '').split('T')[0],
+    webUrl:  item.webUrl
+  };
+}
+
+// Recursively list all HTML files within a folder path (array of segments).
+// Documents in the Handbook may be organised into sub-folders by category,
+// so a flat children call on the root folder is not enough.
+function fetchHbFolder(segments) {
+  // Encode each path segment individually — slashes are path separators and
+  // must not be encoded; everything else (spaces, &, etc.) must be.
+  var pathStr = segments.map(encodeURIComponent).join('/');
   return gGet(
     '/drives/' + gHbDriveId +
-    '/root:/' + encoded + ':/children' +
+    '/root:/' + pathStr + ':/children' +
     '?$expand=listItem($expand=fields)&$top=500'
   ).then(function(d) {
-    gHbDocs = (d.value || [])
-      .filter(function(item) { return !item.folder && /\.html?$/i.test(item.name); })
-      .map(function(item) {
-        var fields = (item.listItem && item.listItem.fields) || {};
-        // FileTypeTag: multi-choice — Graph may return array or ';#'-joined string
-        var raw = fields.FileTypeTag;
-        var tags = [];
-        if (Array.isArray(raw)) {
-          tags = raw;
-        } else if (typeof raw === 'string' && raw) {
-          tags = raw.indexOf(';#') >= 0 ? raw.split(';#').filter(Boolean) : [raw];
-        }
-        return {
-          id:      item.id,
-          name:    item.name.replace(/\.html?$/i, ''),
-          tags:    tags,
-          updated: (item.lastModifiedDateTime || '').split('T')[0],
-          webUrl:  item.webUrl
-        };
-      });
+    var items     = d.value || [];
+    var files     = items
+      .filter(function(i) { return !i.folder && /\.html?$/i.test(i.name); })
+      .map(hbMapItem);
+    var subFolders = items.filter(function(i) { return !!i.folder; });
 
-    // Build sorted unique tag list
+    if (!subFolders.length) return files;
+
+    // Recurse into every sub-folder and flatten results
+    return Promise.all(
+      subFolders.map(function(f) { return fetchHbFolder(segments.concat([f.name])); })
+    ).then(function(results) {
+      return results.reduce(function(acc, r) { return acc.concat(r); }, files);
+    });
+  });
+}
+
+function fetchHbDocs() {
+  return fetchHbFolder([CFG.hbFolder]).then(function(docs) {
+    gHbDocs = docs;
+
+    // Build sorted unique tag list from all documents
     var seen = {};
     gHbDocs.forEach(function(doc) {
       doc.tags.forEach(function(t) { if (t) seen[t] = true; });
