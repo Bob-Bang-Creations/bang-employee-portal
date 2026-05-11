@@ -88,6 +88,9 @@ function bootstrap() {
     return checkAccMgr();
   })
   .then(function() {
+    return checkHandbookEditor();
+  })
+  .then(function() {
     setLoading('Loading users…');
     return fetchUsers();
   })
@@ -105,6 +108,10 @@ function bootstrap() {
     return fetchMileage();
   })
   .then(function() {
+    setLoading('Loading handbook…');
+    return initHandbook();
+  })
+  .then(function() {
     document.getElementById('uname').textContent = gUser.name;
     document.getElementById('uav').textContent   = gUser.ini;
     document.getElementById('sobtn').onclick      = doSignOut;
@@ -115,6 +122,7 @@ function bootstrap() {
     renderManage();
     renderMyExpenses();
     renderAccMgrTable();
+    hbHandleDeepLink();
   })
   .catch(function(e) {
     showFatalError(e.message || String(e));

@@ -47,6 +47,7 @@
   <nav class="tabs">
     <button class="tab active" onclick="switchTab('hr-tasks',this)">HR Tasks</button>
     <button class="tab" onclick="switchTab('expenses',this)">Expenses</button>
+    <button class="tab" onclick="switchTab('handbook',this)">Handbook</button>
   </nav>
 
   <div class="ca">
@@ -264,6 +265,73 @@
 
     </div><!-- /panel-expenses -->
 
+    <!-- ══════════════════ HANDBOOK PANEL ══════════════════ -->
+    <div class="panel" id="panel-handbook">
+      <div id="hb-toast" class="toast"><span id="hb-toasttxt"></span></div>
+
+      <!-- Hero: title, search, tags -->
+      <div class="hb-hero">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 class="hb-title">The Handbook<span style="color:var(--or)">.</span></h1>
+            <div class="hb-sub">Everything you need to know. Search first, browse if you must.</div>
+          </div>
+          <div id="hb-meta" style="font-size:12px;color:var(--g400);align-self:flex-end;white-space:nowrap;padding-bottom:2px"></div>
+        </div>
+
+        <div class="hb-search">
+          <div class="hb-search-icon"></div>
+          <input type="text" id="hb-search-input" class="hb-search-input"
+            placeholder='Try "fire safety", "maternity leave", "GDPR"…'
+            oninput="hbSearch(this.value)">
+        </div>
+
+        <div>
+          <div class="stitle" style="margin-bottom:8px">Browse by tag</div>
+          <div class="hb-tags" id="hb-tags">
+            <span style="font-size:13px;color:var(--g400)">Loading…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results list -->
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div class="stitle">Documents</div>
+          <div style="flex:1;height:1px;background:var(--g100)"></div>
+          <div id="hb-count" style="font-size:12px;color:var(--g400)"></div>
+        </div>
+        <div id="hb-results">
+          <div class="empty">Loading handbook…</div>
+        </div>
+      </div>
+
+      <!-- Inline viewer (slide-in from right) -->
+      <div id="hb-viewer" style="display:none">
+        <div class="hb-backdrop" onclick="closeHandbookViewer()"></div>
+        <div class="hb-panel">
+          <div class="hb-viewer-hdr">
+            <div class="hb-viewer-title-txt" id="hb-viewer-title"></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+              <button class="hb-act-btn" id="hb-viewer-editbtn" style="display:none"
+                onclick="hbOpenEdit(this.dataset.id)">Edit in SharePoint</button>
+              <button class="hb-act-btn" onclick="hbShare(gHbViewing)">Copy link</button>
+              <button class="hb-close-btn" onclick="closeHandbookViewer()" title="Close (Esc)">&#215;</button>
+            </div>
+          </div>
+          <!-- Loading state -->
+          <div id="hb-viewer-loading" style="display:flex;align-items:center;justify-content:center;flex:1;gap:10px">
+            <span class="isp" style="border-color:var(--g200);border-top-color:var(--or)"></span>
+            <span style="font-size:13px;color:var(--g400)">Loading document…</span>
+          </div>
+          <iframe id="hb-viewer-frame" class="hb-viewer-frame"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            src="about:blank"></iframe>
+        </div>
+      </div>
+
+    </div><!-- /panel-handbook -->
+
   </div>
 </div>
 
@@ -273,6 +341,7 @@
 <script src="graph.js"></script>
 <script src="hr-tasks.js"></script>
 <script src="expenses.js"></script>
+<script src="handbook.js"></script>
 <script src="auth.js"></script>
 
 </body>

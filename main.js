@@ -26,6 +26,9 @@ function showFatalError(msg) {
 }
 
 function switchTab(name, btn) {
+  // If leaving the Handbook tab while viewer is open, close it cleanly
+  if (name !== 'handbook' && gHbViewing) closeHandbookViewer();
+
   var panels = document.querySelectorAll('.panel');
   for (var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
   var tabs = document.querySelectorAll('.tab');

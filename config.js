@@ -9,7 +9,9 @@ var CFG = {
   hrGroupId:    'cec65ee4-f9fc-4beb-9b68-2f08f4ec78e6',
   listExpenses: 'expenses_data',
   listMileage:  'mileage_data',
-  accGroupId:   'a6ec43fb-a114-4c72-81e5-064fd2080d58'
+  accGroupId:   'a6ec43fb-a114-4c72-81e5-064fd2080d58',
+  hbGroupId:    '2f5f0cf0-9295-4cc0-90e2-b32fe775d011',  // Handbook Editors
+  hbFolder:     'Handbook and HR'
 };
 
 // Scopes — includes User.ReadBasic.All and GroupMember.Read.All
@@ -32,8 +34,16 @@ var gComps        = [];
 var gUsers        = [];     // [{ name, email }] — fetched from Graph
 var gExpenses     = [];     // standard expenses
 var gMileage      = [];     // mileage records
-var gIsHrAdmin    = false;
-var gIsAccMgr     = false;
+var gIsHrAdmin         = false;
+var gIsAccMgr          = false;
+var gIsHandbookEditor  = false;
+var gHbDriveId         = null;   // Documents drive id
+var gHbDocs            = [];     // [{ id, name, tags[], updated, webUrl }]
+var gHbTags            = [];     // sorted unique tag strings
+var gHbActiveTags      = [];     // currently selected tag filters
+var gHbSearch          = '';
+var gHbViewing         = null;   // id of open document, or null
+var gHbBlobUrl         = null;   // current viewer blob URL (for cleanup)
 var gShowAllTasks = false;
 var gMyFilter     = null;   // null | 'pending' | 'overdue' | 'complete'
 var gExpType      = 'standard'; // active expense log form
