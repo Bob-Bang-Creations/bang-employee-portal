@@ -164,10 +164,7 @@ function renderHbResults() {
             + editBtn
             + '<button class="hb-act-btn" title="Copy link"'
               + ' data-id="' + escHtml(doc.id) + '"'
-              + ' onclick="event.stopPropagation();hbShare(this.dataset.id)">&#9638;</button>'
-            + '<button class="hb-act-btn hb-act-open" title="Open document"'
-              + ' data-id="' + escHtml(doc.id) + '"'
-              + ' onclick="event.stopPropagation();hbOpenViewer(this.dataset.id)">&#8599;</button>'
+              + ' onclick="event.stopPropagation();hbShare(this.dataset.id)">Share</button>'
           + '</div>'
           + '</div>';
       }).join('')
