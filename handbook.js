@@ -1,6 +1,10 @@
 // ── Handbook ──────────────────────────────────────────────
 // Depends on: config.js, graph.js, main.js
 
+// Cached content of handbook.css — fetched once during initHandbook so the
+// viewer can inject it into every document blob without a network round-trip.
+var gHbCss = '';
+
 // ── Group check ──────────────────────────────────────────
 function checkHandbookEditor() {
   return gPost('/me/checkMemberObjects', { ids: [CFG.hbGroupId] }).then(function(d) {
@@ -85,8 +89,46 @@ function fetchHbDocs() {
   });
 }
 
+// Fetch and cache handbook.css so the viewer can inject it into every blob
+// without an extra round-trip per document open.
+function fetchHbCss() {
+  return fetch('./handbook.css')
+    .then(function(r) { return r.ok ? r.text() : ''; })
+    .then(function(css) { gHbCss = css; })
+    .catch(function() { gHbCss = ''; });
+}
+
+// Wrap an HTML fragment (or full document) in a complete document shell with
+// handbook.css injected inline. Blob URLs have no base path so external
+// stylesheets referenced by relative URLs would not resolve — injecting the
+// CSS as a <style> block avoids that entirely.
+function hbWrapDoc(html) {
+  var isFullDoc = /^\s*<!doctype/i.test(html) || /^\s*<html/i.test(html);
+  var styleBlock = gHbCss ? '<style>\n' + gHbCss + '\n</style>' : '';
+
+  if (isFullDoc) {
+    // Full document: splice the style block before </head>, or after <head>
+    if (/<\/head>/i.test(html)) return html.replace(/<\/head>/i, styleBlock + '</head>');
+    if (/<head>/i.test(html))   return html.replace(/<head>/i, '<head>' + styleBlock);
+    return html;
+  }
+
+  // Fragment (standard template format): build a minimal document shell
+  return '<!doctype html>'
+    + '<html lang="en"><head>'
+    + '<meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + styleBlock
+    + '</head><body>'
+    + html
+    + '</body></html>';
+}
+
 function initHandbook() {
-  return fetchHbDrive().then(fetchHbDocs).then(renderHandbook);
+  return fetchHbCss()
+    .then(fetchHbDrive)
+    .then(fetchHbDocs)
+    .then(renderHandbook);
 }
 
 // ── Filtering ────────────────────────────────────────────
@@ -238,7 +280,7 @@ function hbOpenViewer(docId) {
     .then(function(html) {
       if (gHbViewing !== docId) return; // viewer was closed before load finished
       if (gHbBlobUrl) URL.revokeObjectURL(gHbBlobUrl);
-      gHbBlobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      gHbBlobUrl = URL.createObjectURL(new Blob([hbWrapDoc(html)], { type: 'text/html' }));
       frame.src  = gHbBlobUrl;
     })
     .catch(function(e) {

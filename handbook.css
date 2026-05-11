@@ -1,0 +1,100 @@
+/* ── Handbook styles ────────────────────────────────────────
+   Shared across all handbook page fragments.
+
+   CSS custom properties are defined here so the file is fully
+   self-contained — pages render correctly both inside the portal
+   viewer iframe (where style.css is not present) and when opened
+   directly in a browser. Values mirror the portal's :root exactly.
+──────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --or:#FAA61A; --ord:#d4880f; --olt:#FEF0D3;
+  --w:#fff; --ow:#f7f7f5;
+  --g50:#f2f2f0; --g100:#e6e6e2; --g200:#d0d0ca;
+  --g400:#9b9b94; --g600:#5e5e58; --g900:#1a1a18;
+  --gbg:#edfaf3; --gtx:#1a7a45;
+  --rbg:#fdecea; --rtx:#c0392b;
+  --bbg:#eaf2ff; --btx:#1a5fb4;
+  --rsm:6px; --rmd:10px; --rlg:14px;
+  --ss:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --f:'DM Sans','Helvetica Neue',Arial,sans-serif;
+}
+
+body {
+  font-family: var(--f);
+  font-size: 14px;
+  color: var(--g900);
+  background: var(--ow);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+/* ── Page shell ─────────────────────────────────────────── */
+.hb-page-wrap { max-width: 780px; margin: 0 auto; padding: 32px 24px 64px; }
+
+/* ── Document meta strip ────────────────────────────────── */
+.doc-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; align-items: center; }
+.doc-meta-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.badge-category { background: var(--bbg); color: var(--btx); }
+.badge-version  { background: var(--g50);  color: var(--g600); }
+.badge-warning  { background: var(--olt);  color: #7a4f00; }
+.badge-sensitive{ background: var(--rbg);  color: var(--rtx); }
+
+/* ── Document title block ───────────────────────────────── */
+.doc-title-block  { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--g100); }
+.doc-title        { font-size: 26px; font-weight: 600; color: var(--g900); line-height: 1.2; letter-spacing: -.3px; margin-bottom: 8px; }
+.doc-subtitle     { font-size: 14px; color: var(--g400); }
+
+/* ── Section dividers ───────────────────────────────────── */
+.section-divider       { display: flex; align-items: center; gap: 12px; margin: 32px 0 20px; }
+.section-divider-line  { flex: 1; height: 1px; background: var(--g200); }
+.section-divider-label { font-size: 11px; font-weight: 600; color: var(--g600); text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+
+/* ── Content card ───────────────────────────────────────── */
+.content-card { background: var(--w); border: 1px solid var(--g100); border-radius: var(--rlg); padding: 24px 28px; margin-bottom: 20px; box-shadow: var(--ss); }
+
+/* ── Typography ─────────────────────────────────────────── */
+.hb-content p              { font-size: 14px; color: var(--g900); line-height: 1.75; margin-bottom: 14px; }
+.hb-content p:last-child   { margin-bottom: 0; }
+.hb-content strong         { font-weight: 600; color: var(--g900); }
+.hb-content ul             { list-style: none; padding: 0; margin: 0; }
+.hb-content ul li          { font-size: 14px; color: var(--g900); line-height: 1.7; padding: 10px 0 10px 28px; border-bottom: 1px solid var(--g100); position: relative; }
+.hb-content ul li:last-child { border-bottom: none; padding-bottom: 0; }
+.hb-content ul li::before  { content: ''; position: absolute; left: 0; top: 18px; width: 7px; height: 7px; border-radius: 50%; background: var(--or); }
+.hb-content ol             { padding-left: 22px; margin: 0 0 14px; }
+.hb-content ol li          { font-size: 14px; color: var(--g900); line-height: 1.7; margin-bottom: 6px; }
+.hb-content h3             { font-size: 14px; font-weight: 600; color: var(--g600); margin: 20px 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ── Callout boxes ──────────────────────────────────────── */
+.hb-callout        { background: var(--bbg); border-left: 3px solid var(--btx); border-radius: var(--rsm); padding: 14px 18px; margin: 20px 0; font-size: 13.5px; color: var(--g900); line-height: 1.65; }
+.hb-callout strong { color: var(--btx); }
+.hb-warning        { background: var(--olt); border-left: 3px solid var(--or);  border-radius: var(--rsm); padding: 14px 18px; margin: 20px 0; font-size: 13.5px; color: var(--g900); line-height: 1.65; }
+.hb-warning strong { color: #7a4f00; }
+.hb-serious        { background: var(--rbg); border-left: 3px solid var(--rtx); border-radius: var(--rsm); padding: 14px 18px; margin: 20px 0; font-size: 13.5px; color: var(--g900); line-height: 1.65; }
+.hb-serious strong { color: var(--rtx); }
+
+/* ── Related policies / link list ───────────────────────── */
+.policy-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.policy-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--g50); border-radius: var(--rmd); border: 1px solid var(--g100); font-size: 13.5px; color: var(--g900); }
+.policy-item::before { content: '📄'; font-size: 15px; flex-shrink: 0; }
+
+/* ── Document footer ────────────────────────────────────── */
+.doc-footer         { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--g100); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.doc-footer-address { font-size: 12px; color: var(--g400); line-height: 1.8; }
+.doc-footer-address a { color: var(--or); text-decoration: none; }
+.doc-footer-address a:hover { text-decoration: underline; }
+.doc-footer-ref     { font-size: 11px; color: var(--g400); text-align: right; }
+
+/* ── Print ──────────────────────────────────────────────── */
+@media print {
+  .hb-page-wrap { padding: 0; }
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .hb-page-wrap { padding: 16px 16px 48px; }
+  .content-card { padding: 18px 16px; }
+  .doc-title    { font-size: 21px; }
+}
