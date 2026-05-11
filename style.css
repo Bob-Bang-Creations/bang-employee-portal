@@ -118,7 +118,7 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 .toast.err{background:var(--rtx)}
 .empty{text-align:center;padding:36px;color:var(--g400);font-size:14px}
 .isp{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
-@media(max-width:640px){.scards{grid-template-columns:repeat(2,1fr)}.fg2{grid-template-columns:1fr}.panel{padding:16px}}
+@media(max-width:640px){.fg2{grid-template-columns:1fr}.panel{padding:16px}}
 .admin-panel{background:var(--olt);border:1px solid #f5d087;border-radius:var(--rlg);padding:20px;margin-bottom:8px}
 .my-divider{display:flex;align-items:center;gap:12px;margin:24px 0 18px}
 .my-divider-line{flex:1;height:1px;background:var(--g200)}
