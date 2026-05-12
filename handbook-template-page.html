@@ -1,33 +1,32 @@
 <!-- ═══════════════════════════════════════════════════════
      [Document Title]
-     Category:  [e.g. HR Policies / Health & Safety / IT]
-     Ref:       Bang – B – [Short name] r01
-     Audience:  [e.g. All employees / Managers only]
+     FileTypeTag:  [Must match the FileTypeTag value set on the SharePoint file
+                   — this is what the portal uses for filtering]
 
      HOW TO USE THIS TEMPLATE
      ─────────────────────────
-     1. Copy this file to handbook/pages/your-page-name.html
-     2. Fill in the comment block above with document details
-     3. Update the meta badges, title, subtitle and footer ref below
-     4. Replace each section with your content
-     5. Add or remove sections and content cards as needed
-     6. Delete any callout boxes you don't need
-     7. Remove these instructions before committing
+     1. Copy this file and upload it to the 'Handbook and HR' folder in SharePoint
+     2. Set the FileTypeTag column on the file to the appropriate document type
+     3. Update the category badge below to match that FileTypeTag value
+     4. Update the version badge to match the SharePoint file version (e.g. 1.0)
+     5. Update the title, subtitle and sections below
+     6. Add or remove sections and content cards as needed
+     7. Delete any callout boxes you don't need
+     8. Remove these instructions before uploading
 
      AVAILABLE COMPONENTS (copy-paste as needed)
      ─────────────────────────────────────────────
-     Badges:        badge-category  badge-version  badge-warning  badge-sensitive
+     Badges:        badge-category  badge-version  badge-sensitive
      Callout boxes: hb-callout (blue)  hb-warning (amber)  hb-serious (red)
      List types:    ul (bullet)  ol (numbered)
      ═══════════════════════════════════════════════════════ -->
 
 <div class="hb-page-wrap">
 
-  <!-- Meta badges — edit or remove badges as appropriate -->
+  <!-- Meta badges — category must match the FileTypeTag value set in SharePoint -->
   <div class="doc-meta">
     <span class="doc-meta-badge badge-category">HR Policies</span>
-    <span class="doc-meta-badge badge-version">Revision 01</span>
-    <span class="doc-meta-badge badge-warning">Applies to all employees</span>
+    <span class="doc-meta-badge badge-version">{{version}}</span>
     <!-- Optional: <span class="doc-meta-badge badge-sensitive">Confidential</span> -->
   </div>
 
@@ -120,20 +119,5 @@
     </div>
   </div>
 
-  <!-- Footer — update ref and category -->
-  <div class="doc-footer">
-    <div class="doc-footer-address">
-      <strong>Bang Creations Ltd</strong><br>
-      Georgian Court, 56b High Street<br>
-      Haslemere, Surrey, GU27 2LA<br>
-      t <a href="tel:+441428654466">+44 (0)1428 654466</a><br>
-      <a href="https://www.bangcreations.co.uk">www.bangcreations.co.uk</a> &nbsp;·&nbsp;
-      <a href="mailto:enquiries@bangcreations.co.uk">enquiries@bangcreations.co.uk</a>
-    </div>
-    <div class="doc-footer-ref">
-      Document ref: Bang – B – [Document Name] r01<br>
-      Category: [Category]
-    </div>
-  </div>
 
 </div>

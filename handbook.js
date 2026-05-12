@@ -42,42 +42,23 @@ function hbMapItem(item) {
     id:      item.id,
     name:    item.name.replace(/\.html?$/i, ''),
     tags:    tags,
+    version: fields._UIVersionString || '',
     updated: (item.lastModifiedDateTime || '').split('T')[0],
     webUrl:  item.webUrl
   };
 }
 
-// Recursively list all HTML files within a folder path (array of segments).
-// Documents in the Handbook may be organised into sub-folders by category,
-// so a flat children call on the root folder is not enough.
-function fetchHbFolder(segments) {
-  // Encode each path segment individually — slashes are path separators and
-  // must not be encoded; everything else (spaces, &, etc.) must be.
-  var pathStr = segments.map(encodeURIComponent).join('/');
+function fetchHbDocs() {
+  var pathStr = encodeURIComponent(CFG.hbFolder);
   return gGet(
     '/drives/' + gHbDriveId +
     '/root:/' + pathStr + ':/children' +
     '?$expand=listItem($expand=fields)&$top=500'
   ).then(function(d) {
-    var items     = d.value || [];
-    var files     = items
+    return (d.value || [])
       .filter(function(i) { return !i.folder && /\.html?$/i.test(i.name); })
       .map(hbMapItem);
-    var subFolders = items.filter(function(i) { return !!i.folder; });
-
-    if (!subFolders.length) return files;
-
-    // Recurse into every sub-folder and flatten results
-    return Promise.all(
-      subFolders.map(function(f) { return fetchHbFolder(segments.concat([f.name])); })
-    ).then(function(results) {
-      return results.reduce(function(acc, r) { return acc.concat(r); }, files);
-    });
-  });
-}
-
-function fetchHbDocs() {
-  return fetchHbFolder([CFG.hbFolder]).then(function(docs) {
+  }).then(function(docs) {
     gHbDocs = docs;
 
     // Build sorted unique tag list from all documents
@@ -279,6 +260,7 @@ function hbOpenViewer(docId) {
     })
     .then(function(html) {
       if (gHbViewing !== docId) return; // viewer was closed before load finished
+      if (doc.version) html = html.replace('{{version}}', 'Version ' + doc.version);
       if (gHbBlobUrl) URL.revokeObjectURL(gHbBlobUrl);
       gHbBlobUrl = URL.createObjectURL(new Blob([hbWrapDoc(html)], { type: 'text/html' }));
       frame.src  = gHbBlobUrl;
