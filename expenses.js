@@ -435,10 +435,9 @@ function renderAccTypeFilters() {
   var el = document.getElementById('acc-type-filters');
   if (!el) return;
   var types = [
-    { key: 'all',         label: 'All' },
-    { key: 'standard',    label: 'Standard' },
-    { key: 'mileage',     label: 'Mileage' },
-    { key: 'unprocessed', label: 'Unprocessed' }
+    { key: 'all',      label: 'All' },
+    { key: 'standard', label: 'Standard' },
+    { key: 'mileage',  label: 'Mileage' }
   ];
   el.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">Type:</span>'
     + types.map(function(t) {
@@ -469,10 +468,68 @@ function renderAccPersonFilters() {
       }).join('');
 }
 
+function renderAccStateFilters() {
+  var el = document.getElementById('acc-state-filters');
+  if (!el) return;
+  var states = [
+    { key: 'all',         label: 'All' },
+    { key: 'unprocessed', label: 'Unprocessed' },
+    { key: 'processed',   label: 'Processed' }
+  ];
+  el.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">State:</span>'
+    + states.map(function(s) {
+        return '<button class="rbtn' + (gAccFilterState === s.key ? ' act' : '') + '"'
+          + ' onclick="setAccFilterState(\'' + s.key + '\')"'
+          + ' style="font-size:11px;padding:4px 14px">' + s.label + '</button>';
+      }).join('');
+}
+
+function renderAccDateFilters() {
+  var el = document.getElementById('acc-date-filters');
+  if (!el) return;
+  var dates = [
+    { key: 'all',        label: 'All dates' },
+    { key: 'this-month', label: 'This month' },
+    { key: 'last-month', label: 'Last month' },
+    { key: 'this-year',  label: 'This year' }
+  ];
+  el.innerHTML = '<span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">Date:</span>'
+    + dates.map(function(d) {
+        return '<button class="rbtn' + (gAccFilterDate === d.key ? ' act' : '') + '"'
+          + ' onclick="setAccFilterDate(\'' + d.key + '\')"'
+          + ' style="font-size:11px;padding:4px 14px">' + d.label + '</button>';
+      }).join('');
+}
+
+function accDateOk(dateStr) {
+  if (gAccFilterDate === 'all' || !dateStr) return true;
+  var now = new Date();
+  var d   = new Date(dateStr);
+  if (gAccFilterDate === 'this-month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  if (gAccFilterDate === 'last-month') {
+    var lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getFullYear() === lm.getFullYear() && d.getMonth() === lm.getMonth();
+  }
+  if (gAccFilterDate === 'this-year') return d.getFullYear() === now.getFullYear();
+  return true;
+}
+
 // ── Accounts Manager filter setters ──────────────────────
 function setAccFilter(f) {
   gAccFilter = f;
   renderAccTypeFilters();
+  renderAccMgrTable();
+}
+
+function setAccFilterState(s) {
+  gAccFilterState = s;
+  renderAccStateFilters();
+  renderAccMgrTable();
+}
+
+function setAccFilterDate(d) {
+  gAccFilterDate = d;
+  renderAccDateFilters();
   renderAccMgrTable();
 }
 
@@ -492,6 +549,8 @@ function renderAccMgrTable() {
   if (!gIsAccMgr) return;
 
   renderAccTypeFilters();
+  renderAccStateFilters();
+  renderAccDateFilters();
   renderAccPersonFilters();
 
   var all = [];
@@ -511,11 +570,15 @@ function renderAccMgrTable() {
   var filtered = all.filter(function(item) {
     var typeOk =
       gAccFilter === 'all'
-      || (gAccFilter === 'standard'    && item.type === 'standard')
-      || (gAccFilter === 'mileage'     && item.type === 'mileage')
-      || (gAccFilter === 'unprocessed' && item.type === 'standard' && !item.rec.processed);
+      || (gAccFilter === 'standard' && item.type === 'standard')
+      || (gAccFilter === 'mileage'  && item.type === 'mileage');
+    var stateOk =
+      gAccFilterState === 'all'
+      || (gAccFilterState === 'unprocessed' && !item.rec.processed)
+      || (gAccFilterState === 'processed'   && item.rec.processed);
+    var dateOk   = accDateOk(item.date);
     var personOk = !gAccFilterPerson || item.rec.person === gAccFilterPerson;
-    return typeOk && personOk;
+    return typeOk && stateOk && dateOk && personOk;
   });
 
   var el  = document.getElementById('acc-list');
@@ -545,9 +608,8 @@ function renderAccMgrTable() {
         ? '<button class="rbtn" style="font-size:10px;padding:2px 8px"'
             + ' onclick="accDownloadAttachment(\'' + escHtml(r.id) + '\')">&#8595; Receipt</button>'
         : '<button class="rbtn" style="font-size:10px;padding:2px 8px;opacity:.35;cursor:not-allowed" disabled>&#8595; Receipt</button>';
-      var vatDetail = r.incVat
-        ? '<div style="font-size:10.5px;color:var(--g400);margin-top:1px">Ex-VAT £' + r.amountExVat.toFixed(2) + ' · VAT ' + r.vatRate + '%</div>'
-        : '';
+      var exVat = r.incVat ? r.amountExVat.toFixed(2) : r.amount.toFixed(2);
+      var vat   = r.incVat ? r.vatRate : 0;
       return '<div class="tc-compact">'
         + '<span class="badge bbl" style="font-size:10px;flex-shrink:0">Standard</span>'
         + '<div style="flex:1;min-width:0">'
@@ -557,9 +619,9 @@ function renderAccMgrTable() {
         + '</div>'
         + '<div style="text-align:right;flex-shrink:0">'
           + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + r.amount.toFixed(2) + '</div>'
-          + vatDetail
-          + '<div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap">'
+          + '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap">'
             + statusBadge + markBtn + dlBtn
+            + '<span style="font-size:10.5px;color:var(--g400);margin-left:2px">Ex-VAT £' + exVat + ' · VAT ' + vat + '%</span>'
           + '</div>'
         + '</div>'
         + '</div>';
@@ -582,7 +644,7 @@ function renderAccMgrTable() {
         + '</div>'
         + '<div style="text-align:right;flex-shrink:0">'
           + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + tot.toFixed(2) + '</div>'
-          + '<div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap">'
+          + '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap">'
             + mStatusBadge + mMarkBtn + mDlBtn
           + '</div>'
         + '</div>'
