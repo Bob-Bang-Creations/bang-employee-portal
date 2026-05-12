@@ -23,7 +23,7 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 .rbtn.act{background:var(--or);color:var(--w)}
 .rbtn-del{font-family:var(--f);background:transparent;border:1.5px solid var(--rtx);color:var(--rtx);border-radius:var(--rmd);padding:2px 10px;font-size:10px;font-weight:500;cursor:pointer}
 .rbtn-del:hover{background:var(--rtx);color:var(--w)}
-.tc-compact{background:var(--w);border:1px solid var(--g100);border-radius:var(--rmd);padding:7px 14px;margin-bottom:5px;box-shadow:var(--ss);display:flex;align-items:center;gap:10px;min-width:0}
+.tc-compact{background:var(--w);border:1px solid var(--g100);border-radius:var(--rmd);padding:8px 14px;margin-bottom:5px;box-shadow:var(--ss);display:flex;align-items:flex-start;gap:10px;min-width:0}
 #portal{display:none;flex-direction:column;min-height:100vh}
 #portal.active{display:flex}
 .hdr{background:var(--w);border-bottom:2.5px solid var(--or);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--ss)}

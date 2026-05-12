@@ -17,8 +17,9 @@ function fetchExpenses() {
         amountVat:   parseFloat(f.amount_VAT) || 0,
         incVat:      !!f.inc_VAT,
         vatRate:     parseFloat(f.VAT_rate) || 0,
-        processed:   !!f.is_processed,
-        person:      (f.person || '').toLowerCase()
+        processed:      !!f.is_processed,
+        hasAttachment:  !!f.Attachments,
+        person:         (f.person || '').toLowerCase()
       };
     });
   });
@@ -34,9 +35,10 @@ function fetchMileage() {
         date:     (f.travel_date || '').split('T')[0],
         client:   f.client_number || '',
         project:  f.project_number || '',
-        distance: parseFloat(f.distance) || 0,
-        rate:     parseFloat(f.rate) || 0.45,
-        person:   (f.person || '').toLowerCase()
+        distance:  parseFloat(f.distance) || 0,
+        rate:      parseFloat(f.rate) || 0.45,
+        processed: !!f.is_processed,
+        person:    (f.person || '').toLowerCase()
       };
     });
   });
@@ -529,36 +531,61 @@ function renderAccMgrTable() {
   el.innerHTML = filtered.slice(0, limit).map(function(item) {
     var r          = item.rec;
     var personName = escHtml(cleanName(nameByEmail(r.person) || r.person));
+    var cp         = escHtml(r.client) + '-' + escHtml(r.project);
 
     if (item.type === 'standard') {
       var statusBadge = r.processed
-        ? '<span class="badge bgr" style="font-size:10px;flex-shrink:0">Processed</span>'
-        : '<span class="badge bor" style="font-size:10px;flex-shrink:0">Pending</span>';
-      var vatLine = r.incVat ? ' · Ex-VAT £' + r.amountExVat.toFixed(2) : '';
+        ? '<span class="badge bgr" style="font-size:10px">Processed</span>'
+        : '<span class="badge bor" style="font-size:10px">Pending</span>';
+      var markBtn = !r.processed
+        ? '<button class="rbtn" style="font-size:10px;padding:2px 8px"'
+            + ' onclick="accMarkProcessed(\'standard\',\'' + escHtml(r.id) + '\')">&#10003; Processed</button>'
+        : '';
+      var dlBtn = r.hasAttachment
+        ? '<button class="rbtn" style="font-size:10px;padding:2px 8px"'
+            + ' onclick="accDownloadAttachment(\'' + escHtml(r.id) + '\')">&#8595; Receipt</button>'
+        : '<button class="rbtn" style="font-size:10px;padding:2px 8px;opacity:.35;cursor:not-allowed" disabled>&#8595; Receipt</button>';
+      var vatDetail = r.incVat
+        ? '<div style="font-size:10.5px;color:var(--g400);margin-top:1px">Ex-VAT £' + r.amountExVat.toFixed(2) + ' · VAT ' + r.vatRate + '%</div>'
+        : '';
       return '<div class="tc-compact">'
-        + '<span class="badge bbl" style="font-size:10px;flex-shrink:0">Std</span>'
+        + '<span class="badge bbl" style="font-size:10px;flex-shrink:0">Standard</span>'
         + '<div style="flex:1;min-width:0">'
-          + '<span style="font-size:12.5px;font-weight:500;color:var(--g900)">' + personName + '</span>'
-          + '<span style="font-size:12px;color:var(--g600);margin-left:6px">· ' + escHtml(r.title) + '</span>'
-          + '<span style="font-size:11px;color:var(--g400);margin-left:8px">'
-            + escHtml(r.client) + '/' + escHtml(r.project) + ' · ' + fmt(r.date) + vatLine
-          + '</span>'
+          + '<span style="font-size:12px;font-weight:500;color:var(--g900)">' + personName + '</span>'
+          + '<span style="font-size:11.5px;color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · </span>'
+          + '<span style="font-size:11.5px;color:var(--g600)">' + escHtml(r.title) + '</span>'
         + '</div>'
-        + '<div style="font-size:13px;font-weight:600;color:var(--or);white-space:nowrap;flex-shrink:0">£' + r.amount.toFixed(2) + '</div>'
-        + statusBadge
+        + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + r.amount.toFixed(2) + '</div>'
+          + vatDetail
+          + '<div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap">'
+            + statusBadge + markBtn + dlBtn
+          + '</div>'
+        + '</div>'
         + '</div>';
     } else {
       var tot = r.distance * r.rate;
+      var mStatusBadge = r.processed
+        ? '<span class="badge bgr" style="font-size:10px">Processed</span>'
+        : '<span class="badge bor" style="font-size:10px">Pending</span>';
+      var mMarkBtn = !r.processed
+        ? '<button class="rbtn" style="font-size:10px;padding:2px 8px"'
+            + ' onclick="accMarkProcessed(\'mileage\',\'' + escHtml(r.id) + '\')">&#10003; Processed</button>'
+        : '';
+      var mDlBtn = '<button class="rbtn" style="font-size:10px;padding:2px 8px;opacity:.35;cursor:not-allowed" disabled>&#8595; Receipt</button>';
       return '<div class="tc-compact">'
-        + '<span class="badge bgy" style="font-size:10px;flex-shrink:0">Miles</span>'
+        + '<span class="badge bgy" style="font-size:10px;flex-shrink:0">Mileage</span>'
         + '<div style="flex:1;min-width:0">'
-          + '<span style="font-size:12.5px;font-weight:500;color:var(--g900)">' + personName + '</span>'
-          + '<span style="font-size:12px;color:var(--g600);margin-left:6px">· ' + escHtml(r.title) + '</span>'
-          + '<span style="font-size:11px;color:var(--g400);margin-left:8px">'
-            + escHtml(r.client) + '/' + escHtml(r.project) + ' · ' + fmt(r.date) + ' · ' + r.distance + 'mi'
-          + '</span>'
+          + '<span style="font-size:12px;font-weight:500;color:var(--g900)">' + personName + '</span>'
+          + '<span style="font-size:11.5px;color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · ' + r.distance + 'mi · </span>'
+          + '<span style="font-size:11.5px;color:var(--g600)">' + escHtml(r.title) + '</span>'
         + '</div>'
-        + '<div style="font-size:13px;font-weight:600;color:var(--or);white-space:nowrap;flex-shrink:0">£' + tot.toFixed(2) + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + tot.toFixed(2) + '</div>'
+          + '<div style="display:flex;gap:4px;margin-top:4px;justify-content:flex-end;align-items:center;flex-wrap:wrap">'
+            + mStatusBadge + mMarkBtn + mDlBtn
+          + '</div>'
+        + '</div>'
         + '</div>';
     }
   }).join('');
@@ -568,4 +595,38 @@ function renderAccMgrTable() {
     var sawBtn = saw.querySelector('button');
     if (sawBtn) sawBtn.textContent = gShowAllExp ? 'Hide expenses' : 'Show all expenses';
   }
+}
+
+// ── Accounts Manager actions ──────────────────────────────
+function accMarkProcessed(type, id) {
+  var listId = type === 'standard' ? gELId : gMLId;
+  gPatch('/sites/' + gSiteId + '/lists/' + listId + '/items/' + id + '/fields', { is_processed: true })
+    .then(function() {
+      var arr = type === 'standard' ? gExpenses : gMileage;
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i].id === id) { arr[i].processed = true; break; }
+      }
+      renderAccMgrTable();
+      expShowToast('Marked as processed.');
+    })
+    .catch(function(e) { expShowToast('Error: ' + e.message, true); });
+}
+
+function accDownloadAttachment(id) {
+  var siteHost = CFG.tenant + '.sharepoint.com';
+  var spScope  = 'https://' + siteHost + '/.default';
+  var acct     = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
+  gMsal.acquireTokenSilent({ scopes: [spScope], account: acct }).then(function(spRes) {
+    var tok      = spRes.accessToken;
+    var sitePath = CFG.siteUrl.replace('https://' + siteHost, '');
+    var url      = 'https://' + siteHost + sitePath
+      + '/_api/web/lists/getbytitle(\'' + CFG.listExpenses + '\')/items(' + id + ')/AttachmentFiles';
+    return fetch(url, {
+      headers: { Authorization: 'Bearer ' + tok, Accept: 'application/json;odata=verbose' }
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      var files = (data.d && data.d.results) || [];
+      if (!files.length) { expShowToast('No attachment found.', true); return; }
+      window.open('https://' + siteHost + files[0].ServerRelativeUrl, '_blank', 'noopener,noreferrer');
+    });
+  }).catch(function(e) { expShowToast('Could not download attachment: ' + e.message, true); });
 }
