@@ -25,6 +25,18 @@ function gPost(url, body) {
   });
 }
 
+function gPatch(url, body) {
+  return getToken().then(function(tok) {
+    return fetch('https://graph.microsoft.com/v1.0' + url, {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r) {
+      if (!r.ok) return r.text().then(function(t) { throw new Error('PATCH ' + url + ' => ' + r.status + ' ' + t); });
+    });
+  });
+}
+
 function gDel(url) {
   return getToken().then(function(tok) {
     return fetch('https://graph.microsoft.com/v1.0' + url, {
