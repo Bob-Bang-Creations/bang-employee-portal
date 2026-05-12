@@ -219,6 +219,17 @@ function hbOpenViewer(docId) {
   gHbViewing = docId;
   document.getElementById('hb-viewer-title').textContent = doc.name;
 
+  var metaEl = document.getElementById('hb-viewer-meta');
+  if (metaEl) {
+    var metaHtml = doc.tags.map(function(t) {
+      return '<span class="badge bbl" style="font-size:10.5px">' + escHtml(t) + '</span>';
+    }).join('');
+    if (doc.version) {
+      metaHtml += '<span class="badge" style="font-size:10.5px;background:var(--g50);color:var(--g600);padding:2px 8px;border-radius:20px">Version ' + escHtml(doc.version) + '</span>';
+    }
+    metaEl.innerHTML = metaHtml;
+  }
+
   // Reset frame and show loading spinner
   var frame   = document.getElementById('hb-viewer-frame');
   var loading = document.getElementById('hb-viewer-loading');

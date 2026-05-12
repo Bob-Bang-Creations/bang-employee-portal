@@ -290,7 +290,10 @@
         <div class="hb-backdrop" onclick="closeHandbookViewer()"></div>
         <div class="hb-panel">
           <div class="hb-viewer-hdr">
-            <div class="hb-viewer-title-txt" id="hb-viewer-title"></div>
+            <div style="flex:1;min-width:0;overflow:hidden">
+              <div class="hb-viewer-title-txt" id="hb-viewer-title"></div>
+              <div id="hb-viewer-meta" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;align-items:center"></div>
+            </div>
             <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
               <button class="hb-act-btn" id="hb-viewer-editbtn" style="display:none"
                 onclick="hbOpenEdit(this.dataset.id)">Edit in SharePoint</button>

@@ -162,8 +162,8 @@ html,body{font-family:var(--f);font-size:14px;background:var(--ow);color:var(--g
 .hb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4);cursor:pointer}
 .hb-panel{position:relative;width:min(860px,94vw);background:var(--w);display:flex;flex-direction:column;box-shadow:-4px 0 32px rgba(0,0,0,.14);z-index:1;animation:hbSlide .2s cubic-bezier(.2,.8,.3,1)}
 @keyframes hbSlide{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
-.hb-viewer-hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--g100);flex-shrink:0}
-.hb-viewer-title-txt{font-size:14px;font-weight:600;color:var(--g900);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb-viewer-hdr{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid var(--g100);flex-shrink:0}
+.hb-viewer-title-txt{font-size:14px;font-weight:600;color:var(--g900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hb-close-btn{font-family:var(--f);font-size:20px;line-height:1;background:transparent;border:none;cursor:pointer;color:var(--g400);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--rsm);flex-shrink:0;transition:color .12s,background .12s;padding:0}
 .hb-close-btn:hover{background:var(--g50);color:var(--g900)}
 .hb-viewer-frame{flex:1;border:none;width:100%;display:none}

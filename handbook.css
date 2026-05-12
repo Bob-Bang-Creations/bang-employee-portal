@@ -34,8 +34,8 @@ body {
 /* ── Page shell ─────────────────────────────────────────── */
 .hb-page-wrap { max-width: 780px; margin: 0 auto; padding: 32px 24px 64px; }
 
-/* ── Document meta strip ────────────────────────────────── */
-.doc-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; align-items: center; }
+/* ── Document meta strip — hidden; tags/version shown in portal viewer header ── */
+.doc-meta { display: none; }
 .doc-meta-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
 .badge-category { background: var(--bbg); color: var(--btx); }
 .badge-version  { background: var(--g50);  color: var(--g600); }
