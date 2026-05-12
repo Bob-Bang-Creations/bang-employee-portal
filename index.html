@@ -138,6 +138,46 @@
     <div class="panel" id="panel-expenses">
       <div id="exp-toast" class="toast"><span id="exp-toasttxt"></span></div>
 
+      <!-- Accounts Manager section — shown only to Accounts Managers -->
+      <div id="acc-admin-section" class="admin-panel" style="display:none;margin-bottom:24px">
+        <div class="my-divider" style="margin-top:0">
+          <div class="my-divider-line"></div>
+          <div class="my-divider-label">Accounts Manager — All Expenses</div>
+          <div class="my-divider-line"></div>
+        </div>
+        <div style="margin-bottom:12px" id="acc-overview"></div>
+
+        <!-- Filter row -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">Filter:</span>
+          <button class="rbtn" id="accf-all"   onclick="setAccFilter('all')"         style="font-size:11px;padding:4px 14px">All</button>
+          <button class="rbtn" id="accf-std"   onclick="setAccFilter('standard')"    style="font-size:11px;padding:4px 14px">Standard</button>
+          <button class="rbtn" id="accf-mil"   onclick="setAccFilter('mileage')"     style="font-size:11px;padding:4px 14px">Mileage</button>
+          <button class="rbtn" id="accf-unpro" onclick="setAccFilter('unprocessed')" style="font-size:11px;padding:4px 14px">Unprocessed</button>
+        </div>
+
+        <div class="tblcard">
+          <table class="mtbl" style="table-layout:fixed">
+            <thead><tr>
+              <th style="width:16%">Employee</th>
+              <th style="width:18%">Description</th>
+              <th style="width:9%">Client</th>
+              <th style="width:9%">Project</th>
+              <th style="width:8%">Date</th>
+              <th style="width:7%">Type</th>
+              <th style="width:9%">Total</th>
+              <th style="width:9%">Ex-VAT</th>
+              <th style="width:8%">VAT</th>
+              <th style="width:7%">Status</th>
+            </tr></thead>
+            <tbody id="acc-tbody"></tbody>
+          </table>
+        </div>
+        <div id="acc-show-all-wrap" style="text-align:center;margin-bottom:6px;display:none">
+          <button class="rbtn" onclick="toggleAllExpenses()">Show all expenses</button>
+        </div>
+      </div>
+
       <!-- Log an expense -->
       <div class="my-divider" style="margin-top:0">
         <div class="my-divider-line"></div>
@@ -209,12 +249,6 @@
         </div>
       </div>
 
-      <!-- Debug: temporary access diagnostic — remove once access issue resolved -->
-      <div id="acc-debug-wrap" style="margin-bottom:16px">
-        <button class="rbtn" style="font-size:11px;padding:4px 14px" onclick="runAccDebug()">🔍 Debug: check my Accounts Manager access</button>
-        <pre id="acc-debug-out" style="display:none;margin-top:10px;font-size:11px;background:var(--g50);border:1px solid var(--g200);border-radius:var(--rsm);padding:12px;white-space:pre-wrap;word-break:break-all;color:var(--g900)"></pre>
-      </div>
-
       <!-- My logged expenses -->
       <div class="my-divider">
         <div class="my-divider-line"></div>
@@ -222,46 +256,6 @@
         <div class="my-divider-line"></div>
       </div>
       <div id="my-expenses-list"><div class="empty">Loading…</div></div>
-
-      <!-- Accounts Manager section — shown only to Accounts Managers -->
-      <div id="acc-admin-section" class="admin-panel" style="display:none;margin-top:28px">
-        <div class="my-divider" style="margin-top:0">
-          <div class="my-divider-line"></div>
-          <div class="my-divider-label">Accounts Manager — All Expenses</div>
-          <div class="my-divider-line"></div>
-        </div>
-        <div style="margin-bottom:12px" id="acc-overview"></div>
-
-        <!-- Filter row -->
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-          <span style="font-size:12px;font-weight:600;color:var(--g400);text-transform:uppercase;letter-spacing:.06em">Filter:</span>
-          <button class="rbtn" id="accf-all"   onclick="setAccFilter('all')"         style="font-size:11px;padding:4px 14px">All</button>
-          <button class="rbtn" id="accf-std"   onclick="setAccFilter('standard')"    style="font-size:11px;padding:4px 14px">Standard</button>
-          <button class="rbtn" id="accf-mil"   onclick="setAccFilter('mileage')"     style="font-size:11px;padding:4px 14px">Mileage</button>
-          <button class="rbtn" id="accf-unpro" onclick="setAccFilter('unprocessed')" style="font-size:11px;padding:4px 14px">Unprocessed</button>
-        </div>
-
-        <div class="tblcard">
-          <table class="mtbl" style="table-layout:fixed">
-            <thead><tr>
-              <th style="width:16%">Employee</th>
-              <th style="width:18%">Description</th>
-              <th style="width:9%">Client</th>
-              <th style="width:9%">Project</th>
-              <th style="width:8%">Date</th>
-              <th style="width:7%">Type</th>
-              <th style="width:9%">Total</th>
-              <th style="width:9%">Ex-VAT</th>
-              <th style="width:8%">VAT</th>
-              <th style="width:7%">Status</th>
-            </tr></thead>
-            <tbody id="acc-tbody"></tbody>
-          </table>
-        </div>
-        <div id="acc-show-all-wrap" style="text-align:center;margin-bottom:6px;display:none">
-          <button class="rbtn" onclick="toggleAllExpenses()">Show all expenses</button>
-        </div>
-      </div>
 
     </div><!-- /panel-expenses -->
 

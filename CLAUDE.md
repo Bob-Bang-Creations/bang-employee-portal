@@ -86,6 +86,6 @@ Access checks use `checkMemberObjects` (transitive membership) with a fallback t
 
 `gHbCss` (the cached stylesheet content) is a module-level variable in `handbook.js`.
 
-## Pending
+## Expenses tab — layout note
 
-- Remove the debug button (`#acc-debug-wrap`) in `index.html` and `runAccDebug()` in `expenses.js` once the Accounts Manager access issue is resolved.
+The Accounts Manager — All Expenses section (`#acc-admin-section`) sits at the **top** of the Expenses panel so it is immediately visible to Accounts Managers. It remains `display:none` for all other users and is shown by `applyAccAccess()` in `main.js`.

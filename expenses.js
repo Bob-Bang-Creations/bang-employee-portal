@@ -391,34 +391,3 @@ function renderAccMgrTable() {
     if (sawBtn) sawBtn.textContent = gShowAllExp ? 'Hide expenses' : 'Show all expenses';
   }
 }
-
-// ── Accounts Manager debug (remove once access confirmed) ─
-function runAccDebug() {
-  var out = document.getElementById('acc-debug-out');
-  out.style.display = 'block';
-  out.textContent   = 'Running checks…\n';
-  var log  = function(msg) { out.textContent += msg + '\n'; };
-  var acct = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
-  var myId = acct ? acct.localAccountId : '(unknown)';
-
-  log('gIsAccMgr = ' + gIsAccMgr);
-  log('My account localAccountId: ' + myId);
-  log('Target group ID: ' + CFG.accGroupId);
-  log('');
-
-  gPost('/me/checkMemberObjects', { ids: [CFG.accGroupId] })
-  .then(function(d) {
-    log('checkMemberObjects result: ' + JSON.stringify(d.value));
-    log('');
-    return gGet('/groups/' + CFG.accGroupId + '/owners?$select=id,displayName');
-  })
-  .then(function(o) {
-    var owners = (o.value || []);
-    log('Group owners (' + owners.length + '):');
-    owners.forEach(function(u) { log('  ' + u.id + ' (' + (u.displayName || 'no name') + ')'); });
-    log('');
-    var match = owners.some(function(u) { return u.id && u.id.toLowerCase() === myId.toLowerCase(); });
-    log('My ID found in owners: ' + match);
-  })
-  .catch(function(e) { log('ERROR: ' + e.message); });
-}
