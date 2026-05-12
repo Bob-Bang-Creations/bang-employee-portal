@@ -53,7 +53,7 @@ function bootstrap() {
   if (!acct) { showScreen('s-signin'); return; }
 
   var email = (acct.username || '').toLowerCase();
-  var name  = acct.name || acct.username;
+  var name  = (acct.name || acct.username).replace(/\s*\|\s*Bang Creations\s*/i, '');
   gUser = {
     name:  name,
     email: email,
