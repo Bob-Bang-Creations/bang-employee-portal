@@ -145,9 +145,8 @@ function renderManage() {
       var cl = isComp(t.id, e) ? 'bgr' : isOver(t, e) ? 'bre' : 'bgy';
       return '<span class="badge ' + cl + '" style="font-size:10px">' + escHtml(n) + '</span>';
     }).join(' ');
-    var attachIcon = t.hasAttachment ? ' <span style="font-size:9px;color:var(--g400);font-weight:400">📎</span>' : '';
     return '<tr>'
-      + '<td title="' + escHtml(t.title) + '" style="font-weight:500">' + escHtml(t.title) + attachIcon + '</td>'
+      + '<td title="' + escHtml(t.title) + '" style="font-weight:500">' + escHtml(t.title) + '</td>'
       + '<td><div style="display:flex;flex-wrap:wrap;gap:3px">' + names + '</div></td>'
       + '<td>' + fmt(t.due) + '</td>'
       + '<td><span class="badge bbl" style="font-size:10px">' + escHtml(t.cat) + '</span></td>'
