@@ -54,3 +54,4 @@ var gAccFilterPerson = null;          // email to filter by, or null for all
 var gShowAllExp      = false;
 var gEditingExpId    = null;  // id of expense being edited, or null
 var gEditingExpType  = null;  // 'standard' | 'mileage' | null
+var gEditingTaskId   = null;  // id of HR task being edited, or null

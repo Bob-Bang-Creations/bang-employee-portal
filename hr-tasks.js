@@ -6,13 +6,14 @@ function fetchTasks() {
   return gGet('/sites/' + gSiteId + '/lists/' + gTLId + '/items?$expand=fields&$top=500').then(function(d) {
     gTasks = d.value.map(function(i) {
       return {
-        id:        i.id,
-        title:     i.fields.TaskTitle || i.fields.Title || '',
-        desc:      i.fields.Description || '',
-        due:       (i.fields.DueDate || '').split('T')[0],
-        cat:       i.fields.Category || '',
-        assignees: tryParse(i.fields.Assignees, []),
-        links:     tryParse(i.fields.Links, [])
+        id:            i.id,
+        title:         i.fields.TaskTitle || i.fields.Title || '',
+        desc:          i.fields.Description || '',
+        due:           (i.fields.DueDate || '').split('T')[0],
+        cat:           i.fields.Category || '',
+        assignees:     tryParse(i.fields.Assignees, []),
+        links:         tryParse(i.fields.Links, []),
+        hasAttachment: !!i.fields.Attachments
       };
     });
   });
@@ -140,13 +141,17 @@ function renderManage() {
       var cl = isComp(t.id, e) ? 'bgr' : isOver(t, e) ? 'bre' : 'bgy';
       return '<span class="badge ' + cl + '" style="font-size:10px">' + escHtml(n) + '</span>';
     }).join(' ');
+    var attachIcon = t.hasAttachment ? ' <span style="font-size:9px;color:var(--g400);font-weight:400">📎</span>' : '';
     return '<tr>'
-      + '<td title="' + escHtml(t.title) + '" style="font-weight:500">' + escHtml(t.title) + '</td>'
+      + '<td title="' + escHtml(t.title) + '" style="font-weight:500">' + escHtml(t.title) + attachIcon + '</td>'
       + '<td><div style="display:flex;flex-wrap:wrap;gap:3px">' + names + '</div></td>'
       + '<td>' + fmt(t.due) + '</td>'
       + '<td><span class="badge bbl" style="font-size:10px">' + escHtml(t.cat) + '</span></td>'
       + '<td style="color:var(--g600)">' + dc + '/' + t.assignees.length + ' done</td>'
-      + '<td><button class="dbtn" id="db-' + t.id + '" data-tid="' + t.id + '" onclick="delTask(this.dataset.tid)">Delete</button></td>'
+      + '<td style="white-space:nowrap">'
+        + '<button class="rbtn" style="font-size:10px;padding:2px 8px;margin-right:4px" onclick="taskEdit(\'' + escHtml(t.id) + '\')">Edit</button>'
+        + '<button class="dbtn" id="db-' + t.id + '" data-tid="' + t.id + '" onclick="delTask(this.dataset.tid)">Delete</button>'
+      + '</td>'
       + '</tr>';
   });
 
@@ -169,7 +174,74 @@ function toggleAssignForm() {
   if (opening) {
     var srch = document.getElementById('assignee-search');
     if (srch) { srch.value = ''; filterAssignees(''); }
+  } else {
+    gEditingTaskId = null;
+    document.getElementById('addbtn').textContent = 'Assign task';
   }
+}
+
+function resetTaskForm() {
+  document.getElementById('f-title').value      = '';
+  document.getElementById('f-desc').value       = '';
+  document.getElementById('f-due').value        = '';
+  document.getElementById('f-links').value      = '';
+  document.getElementById('f-attachment').value = '';
+  clearAllAssignees();
+  document.getElementById('assign-form-section').style.display = 'none';
+  var btn = document.getElementById('assign-toggle-btn');
+  if (btn) btn.textContent = '+ Assign new training task';
+}
+
+function taskEdit(tid) {
+  var t = null;
+  for (var i = 0; i < gTasks.length; i++) { if (gTasks[i].id === tid) { t = gTasks[i]; break; } }
+  if (!t) return;
+  document.getElementById('f-title').value = t.title;
+  document.getElementById('f-desc').value  = t.desc;
+  document.getElementById('f-due').value   = t.due;
+  document.getElementById('f-links').value = t.links.join(', ');
+  document.getElementById('f-attachment').value = '';
+  var cbs = document.querySelectorAll('#assignee-list input[type=checkbox]');
+  for (var j = 0; j < cbs.length; j++) {
+    var chk = t.assignees.indexOf(cbs[j].value) >= 0;
+    cbs[j].checked = chk;
+    if (chk) cbs[j].closest('.assignee-item').classList.add('checked');
+    else     cbs[j].closest('.assignee-item').classList.remove('checked');
+  }
+  gEditingTaskId = tid;
+  document.getElementById('addbtn').textContent = 'Update task';
+  var s = document.getElementById('assign-form-section');
+  s.style.display = '';
+  var toggleBtn = document.getElementById('assign-toggle-btn');
+  if (toggleBtn) toggleBtn.textContent = '− Assign new training task';
+  s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function uploadTaskAttachment(itemId, file) {
+  var siteHost = CFG.tenant + '.sharepoint.com';
+  var spScope  = 'https://' + siteHost + '/.default';
+  var acct     = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
+  return gMsal.acquireTokenSilent({ scopes: [spScope], account: acct }).then(function(spRes) {
+    var tok      = spRes.accessToken;
+    var sitePath = CFG.siteUrl.replace('https://' + siteHost, '');
+    var url      = 'https://' + siteHost + sitePath
+      + '/_api/web/lists/getbytitle(\'' + CFG.listTasks + '\')/items(' + itemId + ')/AttachmentFiles/add(FileName=\'' + encodeURIComponent(file.name) + '\')';
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        fetch(url, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + tok, Accept: 'application/json;odata=verbose', 'Content-Type': 'application/octet-stream' },
+          body: e.target.result
+        }).then(function(res) {
+          if (!res.ok) return res.text().then(function(t) { reject(new Error('Attachment upload failed: ' + t)); });
+          resolve();
+        }).catch(reject);
+      };
+      reader.onerror = function() { reject(new Error('Failed to read attachment file.')); };
+      reader.readAsArrayBuffer(file);
+    });
+  });
 }
 
 function filterAssignees(q) {
@@ -254,6 +326,7 @@ function addTask() {
   var cat   = document.getElementById('f-cat').value;
   var raw   = document.getElementById('f-links').value.trim();
   var links = raw ? raw.split(',').map(function(l) { return l.trim(); }).filter(Boolean) : [];
+  var file  = document.getElementById('f-attachment').files[0];
 
   var cbs  = document.querySelectorAll('#assignee-list input[type=checkbox]:checked');
   var asgn = [];
@@ -266,6 +339,35 @@ function addTask() {
   var btn = document.getElementById('addbtn');
   btn.disabled = true; btn.innerHTML = '<span class="isp"></span> Saving…';
 
+  // ── Edit mode ─────────────────────────────────────────
+  if (gEditingTaskId) {
+    var editId = gEditingTaskId;
+    var p = gPatch(
+      '/sites/' + gSiteId + '/lists/' + gTLId + '/items/' + editId + '/fields',
+      { TaskTitle: title, Description: desc, DueDate: due, Category: cat,
+        Assignees: JSON.stringify(asgn), Links: JSON.stringify(links) }
+    );
+    if (file) p = p.then(function() { return uploadTaskAttachment(editId, file); });
+    p.then(function() {
+      for (var i = 0; i < gTasks.length; i++) {
+        if (gTasks[i].id === editId) {
+          var t = gTasks[i];
+          t.title = title; t.desc = desc; t.due = due; t.cat = cat;
+          t.assignees = asgn; t.links = links;
+          if (file) t.hasAttachment = true;
+          break;
+        }
+      }
+      gEditingTaskId = null;
+      resetTaskForm();
+      renderMy(); renderManage();
+      showToast('Task updated!');
+    }).catch(function(e) { showToast('Error: ' + e.message, true); })
+    .then(function() { btn.disabled = false; btn.textContent = 'Assign task'; });
+    return;
+  }
+
+  // ── Add mode ──────────────────────────────────────────
   gPost('/sites/' + gSiteId + '/lists/' + gTLId + '/items', {
     fields: {
       TaskTitle:   title,
@@ -276,13 +378,11 @@ function addTask() {
       Links:       JSON.stringify(links)
     }
   }).then(function(r) {
-    gTasks.push({ id: r.id, title: title, desc: desc, due: due, cat: cat, assignees: asgn, links: links });
-    document.getElementById('f-title').value = '';
-    document.getElementById('f-desc').value  = '';
-    document.getElementById('f-due').value   = '';
-    document.getElementById('f-links').value = '';
-    clearAllAssignees();
-    document.getElementById('assign-form-section').style.display = 'none';
+    var p = file ? uploadTaskAttachment(r.id, file).then(function() { return r; }) : Promise.resolve(r);
+    return p;
+  }).then(function(r) {
+    gTasks.push({ id: r.id, title: title, desc: desc, due: due, cat: cat, assignees: asgn, links: links, hasAttachment: !!file });
+    resetTaskForm();
     renderMy(); renderManage();
     showToast('Task assigned successfully!');
   }).catch(function(e) { showToast('Error: ' + e.message, true); })
