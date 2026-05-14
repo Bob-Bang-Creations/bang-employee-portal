@@ -40,7 +40,7 @@ config.js → main.js → graph.js → hr-tasks.js → expenses.js → handbook.
 | Accounts Manager | `a6ec43fb-a114-4c72-81e5-064fd2080d58` |
 | Handbook Editors | `2f5f0cf0-9295-4cc0-90e2-b32fe775d011` |
 
-Access checks use `checkMemberObjects` (transitive membership) with a fallback to `/groups/{id}/owners` for group owners who are not members (HR Administrators only — Accounts Manager and Handbook Editors use membership check only).
+Access checks use `checkMemberObjects` (transitive membership) for all three groups. Owners who are not members are not granted access — membership is required in all cases.
 
 ## Key patterns
 
