@@ -591,6 +591,8 @@ function renderAccMgrTable() {
   }
 
   var limit = gShowAllExp ? filtered.length : Math.min(10, filtered.length);
+  var receiptSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1V2l-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>';
+  var carSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2v-3l2-4h14l2 4v3a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="17.5" r="2.5"/></svg>';
   el.innerHTML = filtered.slice(0, limit).map(function(item) {
     var r          = item.rec;
     var personName = escHtml(cleanName(nameByEmail(r.person) || r.person));
@@ -611,17 +613,21 @@ function renderAccMgrTable() {
       var exVat = r.incVat ? r.amountExVat.toFixed(2) : r.amount.toFixed(2);
       var vat   = r.incVat ? r.vatRate : 0;
       return '<div class="tc-compact">'
-        + '<span class="badge bbl" style="font-size:10px;flex-shrink:0">Standard</span>'
+        + '<div class="acc-icon" style="color:var(--btx)">' + receiptSvg + '</div>'
         + '<div style="flex:1;min-width:0">'
-          + '<span style="font-size:12px;font-weight:500;color:var(--g900)">' + personName + '</span>'
-          + '<span style="font-size:11.5px;color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · </span>'
-          + '<span style="font-size:11.5px;color:var(--g600)">' + escHtml(r.title) + '</span>'
-        + '</div>'
-        + '<div style="text-align:right;flex-shrink:0">'
-          + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + r.amount.toFixed(2) + '</div>'
-          + '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap">'
-            + statusBadge + markBtn + dlBtn
-            + '<span style="font-size:10.5px;color:var(--g400);margin-left:2px">Ex-VAT £' + exVat + ' · VAT ' + vat + '%</span>'
+          + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
+            + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'
+              + '<span style="font-weight:500;color:var(--g900)">' + personName + '</span>'
+              + '<span style="color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · </span>'
+              + '<span style="color:var(--g600)">' + escHtml(r.title) + '</span>'
+            + '</div>'
+            + '<div style="font-size:13px;font-weight:600;color:var(--or);white-space:nowrap;flex-shrink:0">£' + r.amount.toFixed(2) + '</div>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:4px;flex-wrap:wrap">'
+            + '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">'
+              + statusBadge + markBtn + dlBtn
+            + '</div>'
+            + '<span style="font-size:10.5px;color:var(--g400)">Ex-VAT £' + exVat + ' · VAT ' + vat + '%</span>'
           + '</div>'
         + '</div>'
         + '</div>';
@@ -636,16 +642,21 @@ function renderAccMgrTable() {
         : '';
       var mDlBtn = '<button class="rbtn" style="font-size:10px;padding:2px 8px;opacity:.35;cursor:not-allowed" disabled>&#8595; Receipt</button>';
       return '<div class="tc-compact">'
-        + '<span class="badge bgy" style="font-size:10px;flex-shrink:0">Mileage</span>'
+        + '<div class="acc-icon" style="color:var(--g600)">' + carSvg + '</div>'
         + '<div style="flex:1;min-width:0">'
-          + '<span style="font-size:12px;font-weight:500;color:var(--g900)">' + personName + '</span>'
-          + '<span style="font-size:11.5px;color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · ' + r.distance + 'mi · </span>'
-          + '<span style="font-size:11.5px;color:var(--g600)">' + escHtml(r.title) + '</span>'
-        + '</div>'
-        + '<div style="text-align:right;flex-shrink:0">'
-          + '<div style="font-size:13px;font-weight:600;color:var(--or)">£' + tot.toFixed(2) + '</div>'
-          + '<div style="display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap">'
-            + mStatusBadge + mMarkBtn + mDlBtn
+          + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
+            + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'
+              + '<span style="font-weight:500;color:var(--g900)">' + personName + '</span>'
+              + '<span style="color:var(--g400)"> · ' + cp + ' · ' + fmt(r.date) + ' · ' + r.distance + 'mi · </span>'
+              + '<span style="color:var(--g600)">' + escHtml(r.title) + '</span>'
+            + '</div>'
+            + '<div style="font-size:13px;font-weight:600;color:var(--or);white-space:nowrap;flex-shrink:0">£' + tot.toFixed(2) + '</div>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:4px;flex-wrap:wrap">'
+            + '<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">'
+              + mStatusBadge + mMarkBtn + mDlBtn
+            + '</div>'
+            + '<span style="font-size:10.5px;color:var(--g400)">' + r.distance + ' mi · £' + r.rate.toFixed(4) + '/mi</span>'
           + '</div>'
         + '</div>'
         + '</div>';
