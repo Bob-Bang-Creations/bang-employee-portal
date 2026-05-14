@@ -92,6 +92,9 @@ function renderMy() {
           return '<a href="' + escHtml(u) + '" target="_blank" rel="noopener noreferrer">&#128279; ' + escHtml(l.replace(/^https?:\/\//, '').split('/')[0]) + '</a>';
         }).join('') + '</div>'
       : '';
+    var dlBtn = t.hasAttachment
+      ? '<div style="margin-top:6px"><button class="rbtn" style="font-size:10px;padding:2px 10px" onclick="taskDownloadAttachment(\'' + escHtml(t.id) + '\')">&#8595; Download task attachment</button></div>'
+      : '';
     return '<div class="tc' + (d ? ' done' : '') + '">'
       + '<div class="ttop">'
       + '<div style="flex:1;min-width:0">'
@@ -103,6 +106,7 @@ function renderMy() {
       + '</div>'
       + '<div class="tdesc">' + escHtml(t.desc) + '</div>'
       + lk
+      + dlBtn
       + '</div>'
       + '<button class="cbtn' + (d ? ' dn' : '') + '" id="cb-' + t.id + '" data-tid="' + t.id + '" data-email="' + escHtml(email) + '" onclick="toggleComp(this.dataset.tid,this.dataset.email)">' + (d ? '&#10003; Done' : 'Mark done') + '</button>'
       + '</div>'
@@ -215,6 +219,25 @@ function taskEdit(tid) {
   var toggleBtn = document.getElementById('assign-toggle-btn');
   if (toggleBtn) toggleBtn.textContent = '− Assign new training task';
   s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function taskDownloadAttachment(id) {
+  var siteHost = CFG.tenant + '.sharepoint.com';
+  var spScope  = 'https://' + siteHost + '/.default';
+  var acct     = gMsal.getActiveAccount() || gMsal.getAllAccounts()[0];
+  gMsal.acquireTokenSilent({ scopes: [spScope], account: acct }).then(function(spRes) {
+    var tok      = spRes.accessToken;
+    var sitePath = CFG.siteUrl.replace('https://' + siteHost, '');
+    var url      = 'https://' + siteHost + sitePath
+      + '/_api/web/lists/getbytitle(\'' + CFG.listTasks + '\')/items(' + id + ')/AttachmentFiles';
+    return fetch(url, {
+      headers: { Authorization: 'Bearer ' + tok, Accept: 'application/json;odata=verbose' }
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      var files = (data.d && data.d.results) || [];
+      if (!files.length) { showToast('No attachment found.', true); return; }
+      window.open('https://' + siteHost + files[0].ServerRelativeUrl, '_blank', 'noopener,noreferrer');
+    });
+  }).catch(function(e) { showToast('Could not download attachment: ' + e.message, true); });
 }
 
 function uploadTaskAttachment(itemId, file) {
