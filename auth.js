@@ -30,17 +30,8 @@ function checkHrAdmin() {
 }
 
 function checkAccMgr() {
-  // Check direct/transitive membership first
   return gPost('/me/checkMemberObjects', { ids: [CFG.accGroupId] }).then(function(d) {
     gIsAccMgr = d.value && d.value.indexOf(CFG.accGroupId) >= 0;
-    if (gIsAccMgr) return;
-    // Not a member — check if signed-in user is an owner of the group
-    return gGet('/groups/' + CFG.accGroupId + '/owners?$select=id').then(function(o) {
-      var myId = (gMsal.getActiveAccount() || gMsal.getAllAccounts()[0]).localAccountId;
-      gIsAccMgr = (o.value || []).some(function(u) {
-        return u.id && u.id.toLowerCase() === myId.toLowerCase();
-      });
-    }).catch(function() { gIsAccMgr = false; });
   }).catch(function() {
     gIsAccMgr = false;
   });
