@@ -64,7 +64,7 @@ function getListId(sid, name) {
 
 // ── Fetch org users from Graph (paginated) ───────────────
 function fetchUsers() {
-  return fetchUsersPage('/users?$select=displayName,mail,userPrincipalName,assignedLicenses,userType&$top=999', []);
+  return fetchUsersPage('/users?$select=displayName,mail,userPrincipalName,userType&$top=999', []);
 }
 
 function fetchUsersPage(url, acc) {
@@ -81,8 +81,7 @@ function fetchUsersPage(url, acc) {
       .filter(function(u) {
         return u.displayName
           && (u.mail || u.userPrincipalName)
-          && u.userType === 'Member'
-          && u.assignedLicenses && u.assignedLicenses.length > 0;
+          && u.userType === 'Member';
       })
       .map(function(u) { return { name: u.displayName, email: (u.mail || u.userPrincipalName).toLowerCase() }; });
     var all = acc.concat(page);
