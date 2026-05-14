@@ -40,7 +40,7 @@ function switchTab(name, btn) {
 
 function applyHrAccess() {
   var section = document.getElementById('hr-admin-section');
-  if (section) section.style.display = gIsHrAdmin ? '' : 'none';
+  if (section) section.style.display = ''; // DEBUG: force visible — remove before release
 }
 
 function applyAccAccess() {
