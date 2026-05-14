@@ -613,7 +613,7 @@ function renderAccMgrTable() {
       var exVat = r.incVat ? r.amountExVat.toFixed(2) : r.amount.toFixed(2);
       var vat   = r.incVat ? r.vatRate : 0;
       return '<div class="tc-compact">'
-        + '<div class="acc-icon" style="color:var(--btx)">' + receiptSvg + '</div>'
+        + '<div class="acc-icon" style="color:var(--g900)">' + receiptSvg + '</div>'
         + '<div style="flex:1;min-width:0">'
           + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
             + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'
@@ -642,7 +642,7 @@ function renderAccMgrTable() {
         : '';
       var mDlBtn = '<button class="rbtn" style="font-size:10px;padding:2px 8px;opacity:.35;cursor:not-allowed" disabled>&#8595; Receipt</button>';
       return '<div class="tc-compact">'
-        + '<div class="acc-icon" style="color:var(--g600)">' + carSvg + '</div>'
+        + '<div class="acc-icon" style="color:var(--g900)">' + carSvg + '</div>'
         + '<div style="flex:1;min-width:0">'
           + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'
             + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">'
