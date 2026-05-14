@@ -98,7 +98,7 @@ function fmt(d)      { if (!d) return '—'; var p = d.split('-'); return p[2] +
 function ini(n)      { return n.split(' ').map(function(p) { return p[0]; }).join(''); }
 function cleanName(n){ return (n || '').split(' | ')[0].trim(); }
 function escHtml(s)  { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function safeUrl(u)  { return /^https?:\/\//i.test(u) ? u : '#'; }
+function safeUrl(u)  { return /^https?:\/\//i.test(u) ? u : (u ? 'https://' + u : '#'); }
 function tryParse(s, def) { try { return JSON.parse(s || ''); } catch(e) { return def; } }
 
 function nameByEmail(email) {
