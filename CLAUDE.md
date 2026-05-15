@@ -28,7 +28,9 @@ config.js → main.js → graph.js → hr-tasks.js → expenses.js → handbook.
 ## SharePoint
 
 - **Site:** https://bangcreations.sharepoint.com/sites/BANGTEAM
-- **Lists:** `HR_Tasks`, `HR_Completions`, `expenses_data`, `mileage_data`
+- **Lists:** `HR_Tasks`, `expenses_data`
+- **HR_Tasks columns (completion):** `completed` (Yes/No, default No), `CompletedOn` (DateTime) — completion is task-level, not per-assignee
+- **expenses_data columns (mileage merge):** `expense_type` (text: `'standard'` or `'mileage'`), `distance` (text), `rate` (text) — mileage records share `expense_date` and `person` with standard expenses
 - **Handbook documents:** HTML files in the `Documents` library under the folder `Handbook and HR`. Documents are organised into category sub-folders (e.g. `Handbook and HR/Ethics & Conduct/`). The portal recurses into all sub-folders to build the full document list.
 - Standard expense receipts are uploaded as native SharePoint list item attachments via the SharePoint REST API (not Graph), using a SharePoint-scoped token (`https://bangcreations.sharepoint.com/.default`).
 

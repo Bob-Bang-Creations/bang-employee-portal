@@ -13,39 +13,24 @@ function fetchTasks() {
         cat:           i.fields.Category || '',
         assignees:     tryParse(i.fields.Assignees, []),
         links:         tryParse(i.fields.Links, []),
-        hasAttachment: !!i.fields.Attachments
-      };
-    });
-  });
-}
-
-function fetchComps() {
-  return gGet('/sites/' + gSiteId + '/lists/' + gCLId + '/items?$expand=fields&$top=1000').then(function(d) {
-    gComps = d.value.map(function(i) {
-      return {
-        id:       i.id,
-        taskId:   i.fields.TaskId || '',
-        assignee: (i.fields.AssigneeName || '').toLowerCase()
+        hasAttachment: !!i.fields.Attachments,
+        completed:     !!i.fields.completed,
+        completedOn:   i.fields.CompletedOn || null
       };
     });
   });
 }
 
 // ── Helpers ──────────────────────────────────────────────
-function isComp(tid, email) {
-  var e = email.toLowerCase();
-  return gComps.some(function(c) { return c.taskId === String(tid) && c.assignee === e; });
+function isOver(t) {
+  return t.due < today() && !t.completed;
 }
 
-function isOver(t, email) {
-  return t.due < today() && !isComp(t.id, email);
-}
-
-function dueBadge(t, email) {
-  if (isComp(t.id, email)) return '<span class="badge bgr">&#10003; Complete</span>';
-  if (t.due < today())     return '<span class="badge bre">Overdue</span>';
+function dueBadge(t) {
+  if (t.completed)     return '<span class="badge bgr">&#10003; Complete</span>';
+  if (t.due < today()) return '<span class="badge bre">Overdue</span>';
   var d = Math.ceil((new Date(t.due) - new Date(today())) / 86400000);
-  if (d <= 7)              return '<span class="badge bor">Due soon</span>';
+  if (d <= 7)          return '<span class="badge bor">Due soon</span>';
   return '<span class="badge bgy">Upcoming</span>';
 }
 
@@ -68,16 +53,16 @@ function renderMy() {
   var mt    = gTasks.filter(function(t) {
     return t.assignees.some(function(a) { return a.toLowerCase() === email; });
   });
-  var dn = mt.filter(function(t) { return isComp(t.id, email); }).length;
-  var ov = mt.filter(function(t) { return isOver(t, email); }).length;
+  var dn = mt.filter(function(t) { return t.completed; }).length;
+  var ov = mt.filter(function(t) { return isOver(t); }).length;
 
   document.getElementById('my-stats').innerHTML =
     sc(mt.length - dn, 'Pending', 'pending') + sc(ov, 'Overdue', 'overdue') + sc(dn, 'Complete', 'complete');
 
   var displayed = mt;
-  if (gMyFilter === 'pending')  displayed = mt.filter(function(t) { return !isComp(t.id, email); });
-  if (gMyFilter === 'overdue')  displayed = mt.filter(function(t) { return isOver(t, email); });
-  if (gMyFilter === 'complete') displayed = mt.filter(function(t) { return isComp(t.id, email); });
+  if (gMyFilter === 'pending')  displayed = mt.filter(function(t) { return !t.completed; });
+  if (gMyFilter === 'overdue')  displayed = mt.filter(function(t) { return isOver(t); });
+  if (gMyFilter === 'complete') displayed = mt.filter(function(t) { return t.completed; });
 
   if (!displayed.length) {
     document.getElementById('my-list').innerHTML = '<div class="empty">' + (mt.length ? 'No tasks match this filter.' : 'No tasks assigned to you yet.') + '</div>';
@@ -85,7 +70,7 @@ function renderMy() {
   }
 
   document.getElementById('my-list').innerHTML = displayed.map(function(t) {
-    var d  = isComp(t.id, email);
+    var d  = t.completed;
     var lk = t.links.length
       ? '<div class="tlinks">' + t.links.map(function(l) {
           var u = safeUrl(l);
@@ -100,7 +85,7 @@ function renderMy() {
       + '<div style="flex:1;min-width:0">'
       + '<div class="tn' + (d ? ' struck' : '') + '">' + escHtml(t.title) + '</div>'
       + '<div class="tmeta">'
-      + dueBadge(t, email)
+      + dueBadge(t)
       + '<span class="badge bbl">' + escHtml(t.cat) + '</span>'
       + '<span style="font-size:11.5px;color:var(--g400)">Due ' + fmt(t.due) + '</span>'
       + '</div>'
@@ -108,7 +93,7 @@ function renderMy() {
       + lk
       + dlBtn
       + '</div>'
-      + '<button class="cbtn' + (d ? ' dn' : '') + '" id="cb-' + t.id + '" data-tid="' + t.id + '" data-email="' + escHtml(email) + '" onclick="toggleComp(this.dataset.tid,this.dataset.email)">' + (d ? '&#10003; Done' : 'Mark done') + '</button>'
+      + '<button class="cbtn' + (d ? ' dn' : '') + '" id="cb-' + t.id + '" data-tid="' + t.id + '" onclick="toggleComp(this.dataset.tid)">' + (d ? '&#10003; Done' : 'Mark done') + '</button>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -127,22 +112,17 @@ function renderManage() {
     return;
   }
 
-  var incomplete = gTasks.filter(function(t) {
-    return t.assignees.some(function(e) { return !isComp(t.id, e); });
-  }).length;
-  var overdue = gTasks.filter(function(t) {
-    return t.due < today() && t.assignees.some(function(e) { return !isComp(t.id, e); });
-  }).length;
+  var incomplete = gTasks.filter(function(t) { return !t.completed; }).length;
+  var overdue    = gTasks.filter(function(t) { return isOver(t); }).length;
 
   if (ov) ov.innerHTML =
     '<span class="badge bgy" style="margin-right:6px">' + incomplete + ' incomplete</span>'
     + '<span class="badge bre">' + overdue + ' overdue</span>';
 
   var rows = gTasks.map(function(t) {
-    var dc    = t.assignees.filter(function(e) { return isComp(t.id, e); }).length;
     var names = t.assignees.map(function(e) {
       var n  = cleanName(nameByEmail(e));
-      var cl = isComp(t.id, e) ? 'bgr' : isOver(t, e) ? 'bre' : 'bgy';
+      var cl = t.completed ? 'bgr' : isOver(t) ? 'bre' : 'bgy';
       return '<span class="badge ' + cl + '" style="font-size:10px">' + escHtml(n) + '</span>';
     }).join(' ');
     return '<tr>'
@@ -150,7 +130,7 @@ function renderManage() {
       + '<td><div style="display:flex;flex-wrap:wrap;gap:3px">' + names + '</div></td>'
       + '<td>' + fmt(t.due) + '</td>'
       + '<td><span class="badge bbl" style="font-size:10px">' + escHtml(t.cat) + '</span></td>'
-      + '<td style="color:var(--g600)">' + dc + '/' + t.assignees.length + ' done</td>'
+      + '<td style="color:var(--g600)">' + (t.completed ? 'Done' : 'Pending') + '</td>'
       + '<td style="white-space:nowrap">'
         + '<button class="rbtn" style="font-size:10px;padding:2px 8px;margin-right:4px" onclick="taskEdit(\'' + escHtml(t.id) + '\')">Edit</button>'
         + '<button class="dbtn" id="db-' + t.id + '" data-tid="' + t.id + '" onclick="delTask(this.dataset.tid)">Delete</button>'
@@ -322,23 +302,31 @@ function clearAllAssignees() {
 }
 
 // ── Actions ──────────────────────────────────────────────
-function toggleComp(tid, email) {
+function toggleComp(tid) {
   var btn = document.getElementById('cb-' + tid);
   if (btn) { btn.disabled = true; btn.innerHTML = '<span class="isp"></span>'; }
-  var ex = null;
-  for (var i = 0; i < gComps.length; i++) {
-    if (gComps[i].taskId === String(tid) && gComps[i].assignee === email.toLowerCase()) { ex = gComps[i]; break; }
-  }
-  var p = ex
-    ? gDel('/sites/' + gSiteId + '/lists/' + gCLId + '/items/' + ex.id).then(function() {
-        gComps = gComps.filter(function(c) { return c.id !== ex.id; });
-      })
-    : gPost('/sites/' + gSiteId + '/lists/' + gCLId + '/items', {
-        fields: { TaskId: String(tid), AssigneeName: email.toLowerCase(), CompletedOn: new Date().toISOString() }
-      }).then(function(r) { gComps.push({ id: r.id, taskId: String(tid), assignee: email.toLowerCase() }); });
 
-  p.then(function() { renderMy(); renderManage(); })
-   .catch(function(e) { showToast('Error: ' + e.message, true); if (btn) { btn.disabled = false; btn.textContent = 'Mark done'; } });
+  var task = null;
+  for (var i = 0; i < gTasks.length; i++) {
+    if (gTasks[i].id === tid) { task = gTasks[i]; break; }
+  }
+  if (!task) return;
+
+  var nowComplete = !task.completed;
+  var fields = nowComplete
+    ? { completed: true,  CompletedOn: new Date().toISOString() }
+    : { completed: false, CompletedOn: null };
+
+  gPatch('/sites/' + gSiteId + '/lists/' + gTLId + '/items/' + tid + '/fields', fields)
+    .then(function() {
+      task.completed   = nowComplete;
+      task.completedOn = nowComplete ? fields.CompletedOn : null;
+      renderMy(); renderManage();
+    })
+    .catch(function(e) {
+      showToast('Error: ' + e.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark done'; }
+    });
 }
 
 function addTask() {
@@ -403,7 +391,7 @@ function addTask() {
     var p = file ? uploadTaskAttachment(r.id, file).then(function() { return r; }) : Promise.resolve(r);
     return p;
   }).then(function(r) {
-    gTasks.push({ id: r.id, title: title, desc: desc, due: due, cat: cat, assignees: asgn, links: links, hasAttachment: !!file });
+    gTasks.push({ id: r.id, title: title, desc: desc, due: due, cat: cat, assignees: asgn, links: links, hasAttachment: !!file, completed: false, completedOn: null });
     resetTaskForm();
     renderMy(); renderManage();
     showToast('Task assigned successfully!');
@@ -412,21 +400,16 @@ function addTask() {
 }
 
 function delTask(tid) {
-  if (!confirm('Delete this task and all completion records?')) return;
-  var btn     = document.getElementById('db-' + tid);
+  if (!confirm('Delete this task?')) return;
+  var btn = document.getElementById('db-' + tid);
   if (btn) btn.disabled = true;
-  var related = gComps.filter(function(c) { return c.taskId === String(tid); });
   gDel('/sites/' + gSiteId + '/lists/' + gTLId + '/items/' + tid)
-  .then(function() {
-    return Promise.all(related.map(function(c) {
-      return gDel('/sites/' + gSiteId + '/lists/' + gCLId + '/items/' + c.id);
-    }));
-  }).then(function() {
-    gTasks = gTasks.filter(function(t) { return t.id !== tid; });
-    gComps = gComps.filter(function(c) { return c.taskId !== String(tid); });
-    renderMy(); renderManage();
-    showToast('Task deleted.');
-  }).catch(function(e) { showToast('Error: ' + e.message, true); if (btn) btn.disabled = false; });
+    .then(function() {
+      gTasks = gTasks.filter(function(t) { return t.id !== tid; });
+      renderMy(); renderManage();
+      showToast('Task deleted.');
+    })
+    .catch(function(e) { showToast('Error: ' + e.message, true); if (btn) btn.disabled = false; });
 }
 
 function showToast(msg, isErr) {

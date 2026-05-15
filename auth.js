@@ -60,18 +60,10 @@ function bootstrap() {
   })
   .then(function(id) {
     gTLId = id;
-    return getListId(gSiteId, CFG.listComps);
-  })
-  .then(function(id) {
-    gCLId = id;
     return getListId(gSiteId, CFG.listExpenses);
   })
   .then(function(id) {
     gELId = id;
-    return getListId(gSiteId, CFG.listMileage);
-  })
-  .then(function(id) {
-    gMLId = id;
     setLoading('Checking permissions…');
     return checkHrAdmin();
   })
@@ -90,13 +82,7 @@ function bootstrap() {
     return fetchTasks();
   })
   .then(function() {
-    return fetchComps();
-  })
-  .then(function() {
     return fetchExpenses();
-  })
-  .then(function() {
-    return fetchMileage();
   })
   .then(function() {
     setLoading('Loading handbook…');

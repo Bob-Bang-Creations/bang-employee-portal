@@ -5,10 +5,8 @@ var CFG = {
   siteUrl:      'https://bangcreations.sharepoint.com/sites/BANGTEAM',
   tenant:       'bangcreations',
   listTasks:    'HR_Tasks',
-  listComps:    'HR_Completions',
   hrGroupId:    'cec65ee4-f9fc-4beb-9b68-2f08f4ec78e6',
   listExpenses: 'expenses_data',
-  listMileage:  'mileage_data',
   accGroupId:   'a6ec43fb-a114-4c72-81e5-064fd2080d58',
   hbGroupId:    '2f5f0cf0-9295-4cc0-90e2-b32fe775d011',  // Handbook Editors
   hbFolder:     'Handbook and HR'
@@ -26,14 +24,10 @@ var gMsal         = null;
 var gUser         = null;   // { name, email, ini }
 var gSiteId       = null;
 var gTLId         = null;   // HR_Tasks list id
-var gCLId         = null;   // HR_Completions list id
 var gELId         = null;   // expenses_data list id
-var gMLId         = null;   // mileage_data list id
 var gTasks        = [];
-var gComps        = [];
 var gUsers        = [];     // [{ name, email }] — fetched from Graph
-var gExpenses     = [];     // standard expenses
-var gMileage      = [];     // mileage records
+var gExpenses     = [];     // all expenses (standard + mileage)
 var gIsHrAdmin         = false;
 var gIsAccMgr          = false;
 var gIsHandbookEditor  = false;

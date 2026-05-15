@@ -7,38 +7,22 @@ function fetchExpenses() {
     gExpenses = d.value.map(function(i) {
       var f = i.fields;
       return {
-        id:          i.id,
-        title:       f.Title || '',
-        date:        (f.expense_date || f.date_of_expense || '').split('T')[0],
-        client:      f.client_number || '',
-        project:     f.project_number || '',
-        amount:      parseFloat(f.amount) || 0,
-        amountExVat: parseFloat(f.amount_exVAT) || 0,
-        amountVat:   parseFloat(f.amount_VAT) || 0,
-        incVat:      !!f.inc_VAT,
-        vatRate:     parseFloat(f.VAT_rate) || 0,
-        processed:      !!f.is_processed,
-        hasAttachment:  !!f.Attachments,
-        person:         (f.person || '').toLowerCase()
-      };
-    });
-  });
-}
-
-function fetchMileage() {
-  return gGet('/sites/' + gSiteId + '/lists/' + gMLId + '/items?$expand=fields&$top=500').then(function(d) {
-    gMileage = d.value.map(function(i) {
-      var f = i.fields;
-      return {
-        id:       i.id,
-        title:    f.Title || '',
-        date:     (f.travel_date || '').split('T')[0],
-        client:   f.client_number || '',
-        project:  f.project_number || '',
-        distance:  parseFloat(f.distance) || 0,
-        rate:      parseFloat(f.rate) || 0.45,
-        processed: !!f.is_processed,
-        person:    (f.person || '').toLowerCase()
+        id:           i.id,
+        type:         f.expense_type,
+        title:        f.Title || '',
+        date:         (f.expense_date || f.date_of_expense || '').split('T')[0],
+        client:       f.client_number || '',
+        project:      f.project_number || '',
+        amount:       parseFloat(f.amount) || 0,
+        amountExVat:  parseFloat(f.amount_exVAT) || 0,
+        amountVat:    parseFloat(f.amount_VAT) || 0,
+        incVat:       !!f.inc_VAT,
+        vatRate:      parseFloat(f.VAT_rate) || 0,
+        distance:     parseFloat(f.distance) || 0,
+        rate:         parseFloat(f.rate) || 0.45,
+        processed:    !!f.is_processed,
+        hasAttachment: !!f.Attachments,
+        person:       (f.person || '').toLowerCase()
       };
     });
   });
@@ -164,15 +148,16 @@ function addStdExpense() {
       Title: title, expense_date: date, client_number: client, project_number: project,
       amount: amt.toFixed(2), inc_VAT: hasVat, VAT_rate: hasVat ? vatRate.toFixed(2) : '0',
       amount_exVAT: exVat.toFixed(2), amount_VAT: vatAmt.toFixed(2),
-      is_processed: false, person: gUser.email
+      is_processed: false, person: gUser.email, expense_type: 'standard'
     }
   }).then(function(r) {
     return uploadReceipt(r.id, receipt).then(function() { return r; });
   }).then(function(r) {
     gExpenses.push({
-      id: r.id, title: title, date: date, client: client, project: project,
+      id: r.id, type: 'standard', title: title, date: date, client: client, project: project,
       amount: amt, amountExVat: exVat, amountVat: vatAmt,
-      incVat: hasVat, vatRate: vatRate, processed: false, person: gUser.email
+      incVat: hasVat, vatRate: vatRate, distance: 0, rate: 0,
+      processed: false, hasAttachment: true, person: gUser.email
     });
     resetStdForm();
     renderMyExpenses(); renderAccMgrTable();
@@ -247,13 +232,13 @@ function addMilExpense() {
     btn.disabled = true; btn.innerHTML = '<span class="isp"></span> Updating…';
     var editId = gEditingExpId;
     gPatch(
-      '/sites/' + gSiteId + '/lists/' + gMLId + '/items/' + editId + '/fields',
-      { Title: title, travel_date: date, client_number: client, project_number: project,
+      '/sites/' + gSiteId + '/lists/' + gELId + '/items/' + editId + '/fields',
+      { Title: title, expense_date: date, client_number: client, project_number: project,
         distance: dist.toString(), rate: rate.toFixed(4) }
     ).then(function() {
-      for (var i = 0; i < gMileage.length; i++) {
-        if (gMileage[i].id === editId) {
-          var m = gMileage[i];
+      for (var i = 0; i < gExpenses.length; i++) {
+        if (gExpenses[i].id === editId) {
+          var m = gExpenses[i];
           m.title = title; m.date = date; m.client = client;
           m.project = project; m.distance = dist; m.rate = rate;
           break;
@@ -272,13 +257,18 @@ function addMilExpense() {
   // ── Add mode ──────────────────────────────────────────
   btn.disabled = true; btn.innerHTML = '<span class="isp"></span> Saving…';
 
-  gPost('/sites/' + gSiteId + '/lists/' + gMLId + '/items', {
+  gPost('/sites/' + gSiteId + '/lists/' + gELId + '/items', {
     fields: {
-      Title: title, travel_date: date, client_number: client, project_number: project,
-      distance: dist.toString(), rate: rate.toFixed(4), person: gUser.email
+      Title: title, expense_date: date, client_number: client, project_number: project,
+      distance: dist.toString(), rate: rate.toFixed(4), person: gUser.email,
+      expense_type: 'mileage', is_processed: false
     }
   }).then(function(r) {
-    gMileage.push({ id: r.id, title: title, date: date, client: client, project: project, distance: dist, rate: rate, person: gUser.email });
+    gExpenses.push({
+      id: r.id, type: 'mileage', title: title, date: date, client: client, project: project,
+      distance: dist, rate: rate, amount: 0, amountExVat: 0, amountVat: 0, incVat: false, vatRate: 0,
+      processed: false, hasAttachment: false, person: gUser.email
+    });
     resetMilForm();
     renderMyExpenses(); renderAccMgrTable();
     expShowToast('Mileage logged successfully!');
@@ -316,7 +306,7 @@ function expEdit(type, id) {
     recalcVat();
     document.getElementById('es-addbtn').textContent = 'Update expense';
   } else {
-    for (i = 0; i < gMileage.length; i++) { if (gMileage[i].id === id) { r = gMileage[i]; break; } }
+    for (i = 0; i < gExpenses.length; i++) { if (gExpenses[i].id === id) { r = gExpenses[i]; break; } }
     if (!r) return;
     setExpType('mileage');
     document.getElementById('em-client').value   = r.client;
@@ -336,14 +326,9 @@ function expEdit(type, id) {
 
 function expDelete(type, id) {
   if (!confirm('Delete this expense? This cannot be undone.')) return;
-  var listId = type === 'standard' ? gELId : gMLId;
-  gDel('/sites/' + gSiteId + '/lists/' + listId + '/items/' + id)
+  gDel('/sites/' + gSiteId + '/lists/' + gELId + '/items/' + id)
     .then(function() {
-      if (type === 'standard') {
-        gExpenses = gExpenses.filter(function(e) { return e.id !== id; });
-      } else {
-        gMileage = gMileage.filter(function(m) { return m.id !== id; });
-      }
+      gExpenses = gExpenses.filter(function(e) { return e.id !== id; });
       if (gEditingExpId === id) {
         gEditingExpId = null; gEditingExpType = null;
         if (type === 'standard') { resetStdForm(); document.getElementById('es-addbtn').textContent = 'Log expense'; }
@@ -358,30 +343,26 @@ function expDelete(type, id) {
 // ── Render: My expenses ──────────────────────────────────
 function renderMyExpenses() {
   var email = gUser ? gUser.email : '';
-  var myStd = gExpenses.filter(function(e) { return e.person === email; });
-  var myMil = gMileage.filter(function(m)  { return m.person === email; });
-
-  var all = [];
-  myStd.forEach(function(e) { all.push({ type: 'standard', rec: e, date: e.date }); });
-  myMil.forEach(function(m) { all.push({ type: 'mileage',  rec: m, date: m.date }); });
-  all.sort(function(a, b) { return b.date.localeCompare(a.date); });
+  var all = gExpenses
+    .filter(function(e) { return e.person === email; })
+    .slice()
+    .sort(function(a, b) { return b.date.localeCompare(a.date); });
 
   var el = document.getElementById('my-expenses-list');
   if (!all.length) { el.innerHTML = '<div class="empty">No expenses logged yet.</div>'; return; }
 
-  el.innerHTML = all.map(function(item) {
-    var r       = item.rec;
-    var canEdit = item.type === 'mileage' || !r.processed;
+  el.innerHTML = all.map(function(r) {
+    var canEdit = r.type === 'mileage' || !r.processed;
     var actions = canEdit
       ? '<div style="display:flex;gap:5px;margin-top:5px;justify-content:flex-end">'
           + '<button class="rbtn" style="font-size:10px;padding:2px 10px"'
-            + ' onclick="expEdit(\'' + item.type + '\',\'' + escHtml(r.id) + '\')">Edit</button>'
+            + ' onclick="expEdit(\'' + r.type + '\',\'' + escHtml(r.id) + '\')">Edit</button>'
           + '<button class="rbtn-del"'
-            + ' onclick="expDelete(\'' + item.type + '\',\'' + escHtml(r.id) + '\')">Delete</button>'
+            + ' onclick="expDelete(\'' + r.type + '\',\'' + escHtml(r.id) + '\')">Delete</button>'
         + '</div>'
       : '';
 
-    if (item.type === 'standard') {
+    if (r.type === 'standard') {
       var total  = '£' + r.amount.toFixed(2);
       var detail = r.incVat
         ? '<span class="badge bgy" style="font-size:10px">Inc. VAT ' + r.vatRate + '%</span> Ex-VAT: £' + r.amountExVat.toFixed(2) + ' | VAT: £' + r.amountVat.toFixed(2)
@@ -452,7 +433,6 @@ function renderAccPersonFilters() {
   if (!el) return;
   var seen = {};
   gExpenses.forEach(function(e) { if (e.person) seen[e.person] = true; });
-  gMileage.forEach(function(m)  { if (m.person) seen[m.person] = true; });
   var persons = Object.keys(seen).map(function(email) {
     return { email: email, name: cleanName(nameByEmail(email)) };
   }).sort(function(a, b) { return a.name.localeCompare(b.name); });
@@ -553,13 +533,10 @@ function renderAccMgrTable() {
   renderAccDateFilters();
   renderAccPersonFilters();
 
-  var all = [];
-  gExpenses.forEach(function(e) { all.push({ type: 'standard', rec: e, date: e.date }); });
-  gMileage.forEach(function(m)  { all.push({ type: 'mileage',  rec: m, date: m.date }); });
-  all.sort(function(a, b) { return b.date.localeCompare(a.date); });
+  var all = gExpenses.slice().sort(function(a, b) { return b.date.localeCompare(a.date); });
 
-  var totalStd    = gExpenses.length;
-  var totalMil    = gMileage.length;
+  var totalStd    = gExpenses.filter(function(e) { return e.type === 'standard'; }).length;
+  var totalMil    = gExpenses.filter(function(e) { return e.type === 'mileage'; }).length;
   var unprocessed = gExpenses.filter(function(e) { return !e.processed; }).length;
   var ov = document.getElementById('acc-overview');
   if (ov) ov.innerHTML =
@@ -574,10 +551,10 @@ function renderAccMgrTable() {
       || (gAccFilter === 'mileage'  && item.type === 'mileage');
     var stateOk =
       gAccFilterState === 'all'
-      || (gAccFilterState === 'unprocessed' && !item.rec.processed)
-      || (gAccFilterState === 'processed'   && item.rec.processed);
+      || (gAccFilterState === 'unprocessed' && !item.processed)
+      || (gAccFilterState === 'processed'   && item.processed);
     var dateOk   = accDateOk(item.date);
-    var personOk = !gAccFilterPerson || item.rec.person === gAccFilterPerson;
+    var personOk = !gAccFilterPerson || item.person === gAccFilterPerson;
     return typeOk && stateOk && dateOk && personOk;
   });
 
@@ -593,12 +570,11 @@ function renderAccMgrTable() {
   var limit = gShowAllExp ? filtered.length : Math.min(10, filtered.length);
   var receiptSvg = '<svg width="18" height="18" viewBox="0 0 280 378" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;"><path d="M227.8,80.666l-176.171,0c-3.581,0 -6.51,2.93 -6.51,6.51c0,3.581 2.93,6.51 6.51,6.51l176.171,0c3.581,0 6.51,-2.93 6.51,-6.51c0,-3.581 -2.93,-6.51 -6.51,-6.51Z" style="fill-rule:nonzero;"/><path d="M227.8,151.758l-176.171,0c-3.581,0 -6.51,2.93 -6.51,6.51c0,3.581 2.93,6.51 6.51,6.51l176.171,0c3.581,0 6.51,-2.93 6.51,-6.51c0,-3.581 -2.93,-6.51 -6.51,-6.51Z" style="fill-rule:nonzero;"/><path d="M227.8,222.854l-176.171,0c-3.581,0 -6.51,2.93 -6.51,6.51c0,3.581 2.93,6.51 6.51,6.51l176.171,0c3.581,0 6.51,-2.93 6.51,-6.51c0,-3.581 -2.93,-6.51 -6.51,-6.51Z" style="fill-rule:nonzero;"/><path d="M233.008,0.002l-186.525,0c-25.651,0 -46.483,20.833 -46.483,46.483l0,318.229c0,2.604 1.562,4.948 3.971,5.99c2.409,1.042 5.143,0.521 7.031,-1.302l35.417,-34.05l42.121,40.43c2.539,2.409 6.51,2.409 8.984,0l42.121,-40.43l42.121,40.43c1.237,1.237 2.865,1.823 4.492,1.823c1.627,0 3.255,-0.586 4.492,-1.823l42.121,-40.43l35.547,34.115c1.888,1.823 4.688,2.344 7.031,1.302c2.409,-1.042 3.971,-3.385 3.971,-5.99l0,-318.296c0,-25.651 -20.833,-46.483 -46.483,-46.483l0.072,0.002Zm33.463,349.479l-29.037,-27.865c-2.539,-2.409 -6.51,-2.409 -8.984,0l-42.121,40.43l-42.121,-40.43c-2.539,-2.409 -6.51,-2.409 -8.984,0l-42.121,40.43l-42.121,-40.43c-1.237,-1.237 -2.865,-1.823 -4.492,-1.823c-1.627,0 -3.255,0.586 -4.492,1.823l-28.906,27.8l0,-302.929c0,-18.425 15.039,-33.463 33.463,-33.463l186.525,0c18.425,0 33.463,15.039 33.463,33.463l0,302.996l-0.073,-0.002Z" style="fill-rule:nonzero;"/></svg>';
   var carSvg = '<svg width="18" height="18" viewBox="0 0 200 176" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="fill-rule:evenodd;clip-rule:evenodd;"><path d="M4.167,142.936l3.902,0l0,28.719c0,2.301 1.864,4.167 4.167,4.167l26.424,0c2.303,0 4.167,-1.866 4.167,-4.167l0,-28.719l114.343,0l0,28.719c0,2.301 1.864,4.167 4.167,4.167l26.424,0c2.303,0 4.167,-1.866 4.167,-4.167l0,-28.719l3.906,0c2.303,0 4.167,-1.866 4.167,-4.167l0,-50.653c0,-6.56 -4.684,-12.042 -10.883,-13.289l-18.573,-64.282c-1.79,-6.209 -7.556,-10.545 -14.018,-10.545l-113.883,0c-6.462,0 -12.227,4.336 -14.018,10.543l-18.651,64.556c-5.73,1.584 -9.974,6.79 -9.974,13.018l0,50.653c0,2.301 1.864,4.167 4.167,4.167Zm30.326,24.552l-18.091,0l0,-24.552l18.091,0l0,24.552Zm149.101,0l-18.091,0l0,-24.552l18.091,0l0,24.552Zm-146.96,-154.637c0.765,-2.661 3.239,-4.519 6.01,-4.519l113.883,0c2.771,0 5.245,1.858 6.01,4.521l17.826,61.702l-161.556,0l17.826,-61.705Zm-28.3,75.264c0,-2.883 2.344,-5.227 5.225,-5.227l172.88,0c2.885,0 5.229,2.344 5.229,5.227l0,46.486l-183.333,0l-0,-46.486Z" style="fill-rule:nonzero;"/><path d="M31.954,122.19c7.414,0 13.444,-6.03 13.444,-13.444c0,-7.412 -6.03,-13.442 -13.444,-13.442c-7.41,0 -13.44,6.03 -13.44,13.442c0,7.414 6.03,13.444 13.44,13.444Zm0,-18.553c2.82,0 5.111,2.291 5.111,5.109c0,2.818 -2.291,5.111 -5.111,5.111c-2.816,0 -5.107,-2.293 -5.107,-5.111c0,-2.818 2.291,-5.109 5.107,-5.109Z" style="fill-rule:nonzero;"/><path d="M168.042,122.19c7.41,0 13.44,-6.03 13.44,-13.444c0,-7.412 -6.03,-13.442 -13.44,-13.442c-7.414,0 -13.444,6.03 -13.444,13.442c0,7.414 6.03,13.444 13.444,13.444Zm0,-18.553c2.816,0 5.107,2.291 5.107,5.109c0,2.818 -2.291,5.111 -5.107,5.111c-2.82,0 -5.111,-2.293 -5.111,-5.111c0,-2.818 2.291,-5.109 5.111,-5.109Z" style="fill-rule:nonzero;"/><path d="M71.533,122.19c2.303,0 4.167,-1.866 4.167,-4.167l0,-18.553c0,-2.301 -1.864,-4.167 -4.167,-4.167c-2.303,0 -4.167,1.866 -4.167,4.167l0,18.553c0,2.301 1.864,4.167 4.167,4.167Z" style="fill-rule:nonzero;"/><path d="M90.511,122.19c2.303,0 4.167,-1.866 4.167,-4.167l0,-18.553c0,-2.301 -1.864,-4.167 -4.167,-4.167c-2.303,0 -4.167,1.866 -4.167,4.167l0,18.553c0,2.301 1.864,4.167 4.167,4.167Z" style="fill-rule:nonzero;"/><path d="M109.485,122.19c2.303,0 4.167,-1.866 4.167,-4.167l0,-18.553c0,-2.301 -1.864,-4.167 -4.167,-4.167c-2.303,0 -4.167,1.866 -4.167,4.167l0,18.553c-0,2.301 1.864,4.167 4.167,4.167Z" style="fill-rule:nonzero;"/><path d="M128.463,122.19c2.303,0 4.167,-1.866 4.167,-4.167l0,-18.553c0,-2.301 -1.864,-4.167 -4.167,-4.167c-2.303,0 -4.167,1.866 -4.167,4.167l0,18.553c0,2.301 1.864,4.167 4.167,4.167Z" style="fill-rule:nonzero;"/></svg>';
-  el.innerHTML = filtered.slice(0, limit).map(function(item) {
-    var r          = item.rec;
+  el.innerHTML = filtered.slice(0, limit).map(function(r) {
     var personName = escHtml(cleanName(nameByEmail(r.person) || r.person));
     var cp         = escHtml(r.client) + '-' + escHtml(r.project);
 
-    if (item.type === 'standard') {
+    if (r.type === 'standard') {
       var statusBadge = r.processed
         ? '<span class="badge bgr" style="font-size:10px">Processed</span>'
         : '<span class="badge bor" style="font-size:10px">Pending</span>';
@@ -672,12 +648,10 @@ function renderAccMgrTable() {
 
 // ── Accounts Manager actions ──────────────────────────────
 function accMarkProcessed(type, id) {
-  var listId = type === 'standard' ? gELId : gMLId;
-  gPatch('/sites/' + gSiteId + '/lists/' + listId + '/items/' + id + '/fields', { is_processed: true })
+  gPatch('/sites/' + gSiteId + '/lists/' + gELId + '/items/' + id + '/fields', { is_processed: true })
     .then(function() {
-      var arr = type === 'standard' ? gExpenses : gMileage;
-      for (var i = 0; i < arr.length; i++) {
-        if (arr[i].id === id) { arr[i].processed = true; break; }
+      for (var i = 0; i < gExpenses.length; i++) {
+        if (gExpenses[i].id === id) { gExpenses[i].processed = true; break; }
       }
       renderAccMgrTable();
       expShowToast('Marked as processed.');
