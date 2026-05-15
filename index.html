@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bang Creations HR Portal</title>
+  <title>Bang Creations Employee Portal</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -46,15 +46,15 @@
   </header>
 
   <nav class="tabs">
-    <button class="tab active" onclick="switchTab('hr-tasks',this)">HR Tasks</button>
+    <button class="tab active" onclick="switchTab('handbook',this)">Handbook</button>
     <button class="tab" onclick="switchTab('expenses',this)">Expenses</button>
-    <button class="tab" onclick="switchTab('handbook',this)">Handbook</button>
+    <button class="tab" onclick="switchTab('hr-tasks',this)">HR Tasks</button>
   </nav>
 
   <div class="ca">
 
     <!-- ══════════════════ HR TASKS PANEL ══════════════════ -->
-    <div class="panel active" id="panel-hr-tasks">
+    <div class="panel" id="panel-hr-tasks">
       <div id="toast" class="toast"><span id="toasttxt"></span></div>
 
       <!-- HR admin section — shown only to HR administrators -->
@@ -246,7 +246,7 @@
     </div><!-- /panel-expenses -->
 
     <!-- ══════════════════ HANDBOOK PANEL ══════════════════ -->
-    <div class="panel" id="panel-handbook">
+    <div class="panel active" id="panel-handbook">
       <div id="hb-toast" class="toast"><span id="hb-toasttxt"></span></div>
 
       <!-- Hero: title, search, tags -->
